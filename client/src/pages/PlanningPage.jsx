@@ -74,6 +74,8 @@ const formatDuration = (distanceKm) => {
   return `${hours} ч ${rest} мин`;
 };
 
+const requestLabel = (request) => (request ? `#${request.id} · ${request.cargoName} · до ${formatDateTime(request.desiredDeliveryDate)}` : "");
+
 export default function PlanningPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
@@ -229,10 +231,22 @@ export default function PlanningPage() {
                 </Typography>
                 <FormControl fullWidth size="small">
                   <InputLabel>Заявка</InputLabel>
-                  <Select label="Заявка" value={selectedRequestId} onChange={(event) => setSelectedRequestId(event.target.value)}>
+                  <Select
+                    label="Заявка"
+                    value={selectedRequestId}
+                    onChange={(event) => setSelectedRequestId(event.target.value)}
+                    renderValue={(value) => {
+                      const request = requests.find((item) => item.id === Number(value));
+                      return (
+                        <Typography component="span" noWrap sx={{ display: "block", pr: 2 }}>
+                          {requestLabel(request)}
+                        </Typography>
+                      );
+                    }}
+                  >
                     {requests.map((request) => (
                       <MenuItem key={request.id} value={request.id}>
-                        #{request.id} · {request.cargoName} · до {formatDateTime(request.desiredDeliveryDate)}
+                        {requestLabel(request)}
                       </MenuItem>
                     ))}
                   </Select>
@@ -313,6 +327,9 @@ export default function PlanningPage() {
                   label="Точка загрузки"
                   value={start.address}
                   required
+                  multiline
+                  minRows={1}
+                  maxRows={2}
                   onChange={(address) => setStart((prev) => ({ ...prev, address, ...inferAddressCoordinates(address) }))}
                   onSelect={(place) =>
                     setStart((prev) => ({
@@ -331,6 +348,9 @@ export default function PlanningPage() {
                           label={`Разгрузка ${index + 1}`}
                           value={point.address}
                           required
+                          multiline
+                          minRows={1}
+                          maxRows={2}
                           onChange={(address) =>
                             updateDeliveryPoint(index, {
                               address,

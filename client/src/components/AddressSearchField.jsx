@@ -20,7 +20,10 @@ export default function AddressSearchField({
   onSelect,
   required = false,
   helperText,
-  placeholder
+  placeholder,
+  multiline = false,
+  minRows = 1,
+  maxRows = 3
 }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -73,6 +76,9 @@ export default function AddressSearchField({
           fullWidth
           placeholder={placeholder}
           helperText={helperText}
+          multiline={multiline}
+          minRows={multiline ? minRows : undefined}
+          maxRows={multiline ? maxRows : undefined}
         />
         <Button
           variant="outlined"
