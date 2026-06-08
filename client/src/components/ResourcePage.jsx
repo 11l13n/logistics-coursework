@@ -249,13 +249,13 @@ export default function ResourcePage({
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 4,
+            borderRadius: "24px",
             overflow: "hidden"
           }
         }}
       >
         <Box component="form" onSubmit={submit}>
-          <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900 }}>
+          <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900, textAlign: "center" }}>
             {editingRow ? "Редактирование" : "Новая запись"}
           </DialogTitle>
           <DialogContent dividers sx={{ px: 3, py: 2.5 }}>

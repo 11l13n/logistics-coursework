@@ -262,7 +262,7 @@ export default function RoutesPage() {
         onClose={() => setSelected(null)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 4, overflow: "hidden" } }}
+        PaperProps={{ sx: { borderRadius: "24px", overflow: "hidden" } }}
       >
         {selected && (
           <>

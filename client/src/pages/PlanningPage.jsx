@@ -241,25 +241,51 @@ export default function PlanningPage() {
                 {selectedRequest && (
                   <Box
                     sx={{
-                      borderLeft: 3,
-                      borderColor: "secondary.main",
-                      borderRadius: 2,
-                      bgcolor: "action.hover",
+                      border: 1,
+                      borderColor: "divider",
+                      borderRadius: 3,
                       px: 1.5,
                       py: 1.25
                     }}
                   >
-                    <Stack spacing={0.75}>
+                    <Stack spacing={1.25}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-                        <Typography fontWeight={900}>{selectedRequest.client?.name}</Typography>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Клиент
+                          </Typography>
+                          <Typography fontWeight={900} noWrap>
+                            {selectedRequest.client?.name}
+                          </Typography>
+                        </Box>
                         <StatusChip value={selectedRequest.status} />
                       </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {selectedRequest.cargoName}, {selectedRequest.weightKg} кг, {selectedRequest.volume} м3
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDateTime(selectedRequest.desiredDeliveryDate)} · {deliveryPoints.length} точек
-                      </Typography>
+                      <Grid container spacing={1.25}>
+                        <Grid item xs={7}>
+                          <Typography variant="caption" color="text.secondary">
+                            Груз
+                          </Typography>
+                          <Typography variant="body2" fontWeight={800} noWrap>
+                            {selectedRequest.cargoName}, {selectedRequest.weightKg} кг
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={5}>
+                          <Typography variant="caption" color="text.secondary">
+                            Объем
+                          </Typography>
+                          <Typography variant="body2" fontWeight={800}>
+                            {selectedRequest.volume} м3
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="text.secondary">
+                            Срок и точки
+                          </Typography>
+                          <Typography variant="body2" fontWeight={800}>
+                            {formatDateTime(selectedRequest.desiredDeliveryDate)} · {deliveryPoints.length} точек
+                          </Typography>
+                        </Grid>
+                      </Grid>
                     </Stack>
                   </Box>
                 )}
@@ -356,7 +382,7 @@ export default function PlanningPage() {
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        Примерное время
+                        Примерное время без пробок
                       </Typography>
                       <Typography variant="h5" fontWeight={900}>
                         {estimatedDuration}

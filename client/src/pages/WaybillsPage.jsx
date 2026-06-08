@@ -257,7 +257,7 @@ export default function WaybillsPage() {
         onClose={() => setEditing(null)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 4, overflow: "hidden" } }}
+        PaperProps={{ sx: { borderRadius: "24px", overflow: "hidden" } }}
       >
         <form onSubmit={save}>
           <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900 }}>Путевой лист {editing?.number}</DialogTitle>

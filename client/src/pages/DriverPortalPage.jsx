@@ -154,7 +154,7 @@ export default function DriverPortalPage() {
         onClose={() => setCompleteWaybill(null)}
         maxWidth="xs"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 4, overflow: "hidden" } }}
+        PaperProps={{ sx: { borderRadius: "24px", overflow: "hidden" } }}
       >
         <form onSubmit={completeTrip}>
           <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900 }}>Завершение рейса</DialogTitle>
