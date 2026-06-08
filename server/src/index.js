@@ -40,7 +40,9 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(morgan("dev"));
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
+}
 
 app.use("/api", (req, res, next) => {
   res.set("Cache-Control", "no-store");
