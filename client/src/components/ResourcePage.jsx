@@ -242,14 +242,29 @@ export default function ResourcePage({
         </Table>
       </TableContainer>
 
-      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="md" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={closeDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: "hidden"
+          }
+        }}
+      >
         <Box component="form" onSubmit={submit}>
-          <DialogTitle>{editingRow ? "Редактирование" : "Новая запись"}</DialogTitle>
-          <DialogContent dividers>
-            <Grid container spacing={2}>
+          <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900 }}>
+            {editingRow ? "Редактирование" : "Новая запись"}
+          </DialogTitle>
+          <DialogContent dividers sx={{ px: 3, py: 2.5 }}>
+            <Grid container spacing={1.75}>
               {fields.map((field) => (
                 <Grid item xs={12} md={field.fullWidth ? 12 : 6} key={field.name}>
-                  {field.type === "select" ? (
+                  {field.render ? (
+                    field.render({ form, setForm, editingRow })
+                  ) : field.type === "select" ? (
                     <FormControl fullWidth size="small" required={field.required}>
                       <InputLabel>{field.label}</InputLabel>
                       <Select
@@ -283,9 +298,11 @@ export default function ResourcePage({
               ))}
             </Grid>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={closeDialog}>Отмена</Button>
-            <Button type="submit" variant="contained">
+          <DialogActions sx={{ px: 3, py: 2, bgcolor: "action.hover" }}>
+            <Button onClick={closeDialog} sx={{ minWidth: 120, borderRadius: 2.5 }}>
+              Отмена
+            </Button>
+            <Button type="submit" variant="contained" sx={{ minWidth: 150, borderRadius: 2.5 }}>
               Сохранить
             </Button>
           </DialogActions>

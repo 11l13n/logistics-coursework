@@ -116,6 +116,11 @@ export default function AppLayout({ mode, onToggleMode }) {
               {user.role}
             </Typography>
           </Box>
+          <Tooltip title={mode === "dark" ? "Светлая тема" : "Темная тема"}>
+            <IconButton onClick={onToggleMode} sx={{ color: "rgba(247, 246, 241, 0.82)" }}>
+              {mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Выйти">
             <IconButton onClick={logout} sx={{ color: "rgba(247, 246, 241, 0.82)" }}>
               <LogoutIcon />
@@ -136,19 +141,14 @@ export default function AppLayout({ mode, onToggleMode }) {
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
           borderBottom: 1,
-          borderColor: "divider"
+          borderColor: "divider",
+          display: { xs: "block", md: "none" }
         }}
       >
         <Toolbar>
-          <IconButton sx={{ display: { md: "none" }, mr: 1 }} onClick={() => setMobileOpen(true)}>
+          <IconButton onClick={() => setMobileOpen(true)}>
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" fontWeight={900} sx={{ flex: 1 }}>
-            Логистическая информационная система
-          </Typography>
-          <Tooltip title={mode === "dark" ? "Светлая тема" : "Темная тема"}>
-            <IconButton onClick={onToggleMode}>{mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}</IconButton>
-          </Tooltip>
         </Toolbar>
       </AppBar>
 
@@ -177,7 +177,10 @@ export default function AppLayout({ mode, onToggleMode }) {
         </Drawer>
       </Box>
 
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, mt: 8, width: { md: `calc(100% - ${drawerWidth}px)` } }}>
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, mt: { xs: 8, md: 0 }, width: { md: `calc(100% - ${drawerWidth}px)` } }}
+      >
         <Outlet />
       </Box>
     </Box>

@@ -257,11 +257,17 @@ export default function RoutesPage() {
         </Table>
       </TableContainer>
 
-      <Dialog open={Boolean(selected)} onClose={() => setSelected(null)} maxWidth="md" fullWidth>
+      <Dialog
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 4, overflow: "hidden" } }}
+      >
         {selected && (
           <>
-            <DialogTitle>Маршрут #{selected.id}</DialogTitle>
-            <DialogContent dividers>
+            <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900 }}>Маршрут #{selected.id}</DialogTitle>
+            <DialogContent dividers sx={{ px: 3, py: 2.5 }}>
               <Stack spacing={2}>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -284,8 +290,10 @@ export default function RoutesPage() {
                 <RouteMap points={routePoints(selected)} />
               </Stack>
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setSelected(null)}>Закрыть</Button>
+            <DialogActions sx={{ px: 3, py: 2, bgcolor: "action.hover" }}>
+              <Button onClick={() => setSelected(null)} sx={{ minWidth: 120, borderRadius: 2.5 }}>
+                Закрыть
+              </Button>
             </DialogActions>
           </>
         )}

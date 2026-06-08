@@ -149,18 +149,26 @@ export default function DriverPortalPage() {
         ))}
       </Grid>
 
-      <Dialog open={Boolean(completeWaybill)} onClose={() => setCompleteWaybill(null)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={Boolean(completeWaybill)}
+        onClose={() => setCompleteWaybill(null)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 4, overflow: "hidden" } }}
+      >
         <form onSubmit={completeTrip}>
-          <DialogTitle>Завершение рейса</DialogTitle>
-          <DialogContent dividers>
+          <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900 }}>Завершение рейса</DialogTitle>
+          <DialogContent dividers sx={{ px: 3, py: 2.5 }}>
             <Stack spacing={2}>
               <TextField label="Конечный пробег" type="number" value={finishForm.endMileage} onChange={(event) => setFinishForm((prev) => ({ ...prev, endMileage: event.target.value }))} required />
               <TextField label="Фактический расход топлива, л" type="number" value={finishForm.actualFuel} onChange={(event) => setFinishForm((prev) => ({ ...prev, actualFuel: event.target.value }))} required />
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setCompleteWaybill(null)}>Отмена</Button>
-            <Button type="submit" variant="contained" color="success">
+          <DialogActions sx={{ px: 3, py: 2, bgcolor: "action.hover" }}>
+            <Button onClick={() => setCompleteWaybill(null)} sx={{ minWidth: 120, borderRadius: 2.5 }}>
+              Отмена
+            </Button>
+            <Button type="submit" variant="contained" color="success" sx={{ minWidth: 150, borderRadius: 2.5 }}>
               Завершить
             </Button>
           </DialogActions>

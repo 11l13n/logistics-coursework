@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import { Alert } from "@mui/material";
+import { Alert, Box, Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
 import ArchiveIcon from "@mui/icons-material/Archive";
+import DeleteIcon from "@mui/icons-material/Delete";
 import UnarchiveIcon from "@mui/icons-material/Unarchive";
+import AddressSearchField from "../components/AddressSearchField";
 import StatusChip from "../components/StatusChip";
 import ResourcePage from "../components/ResourcePage";
 import http, { getErrorMessage } from "../api/http";
@@ -19,24 +22,82 @@ const archiveOptions = [
   { value: "all", label: "Все" }
 ];
 
-const deliveryPointsToText = (row) => {
+const emptyDeliveryPoint = (orderNumber = 1) => ({
+  address: "",
+  latitude: "",
+  longitude: "",
+  orderNumber
+});
+
+const deliveryPointsFromRow = (row) => {
   const points = row.deliveryPoints?.length ? row.deliveryPoints : [{ address: row.deliveryAddress }];
-  return points
-    .map((point) => [point.address, point.latitude, point.longitude].filter((value) => value !== undefined && value !== null).join(" | "))
-    .join("\n");
+  return points.map((point, index) => ({
+    address: point.address || "",
+    latitude: point.latitude ?? "",
+    longitude: point.longitude ?? "",
+    orderNumber: point.orderNumber || index + 1
+  }));
 };
 
-const parseDeliveryPoints = (text) =>
-  String(text || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line, index) => {
-      const [address, latitude, longitude] = line.split("|").map((part) => part.trim());
-      return { address, latitude, longitude, orderNumber: index + 1 };
-    });
-
 const isArchived = (row) => Boolean(row.archivedAt) || row.status === "ARCHIVED";
+
+function DeliveryPointsField({ points = [], onChange }) {
+  const safePoints = points.length ? points : [emptyDeliveryPoint()];
+
+  const updatePoint = (index, patch) => {
+    onChange(safePoints.map((point, itemIndex) => (itemIndex === index ? { ...point, ...patch } : point)));
+  };
+
+  const addPoint = () => {
+    onChange([...safePoints, emptyDeliveryPoint(safePoints.length + 1)]);
+  };
+
+  const removePoint = (index) => {
+    const next = safePoints.filter((_, itemIndex) => itemIndex !== index);
+    onChange(next.length ? next : [emptyDeliveryPoint()]);
+  };
+
+  return (
+    <Stack spacing={1.25}>
+      <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "stretch", sm: "center" }} justifyContent="space-between" spacing={1}>
+        <Typography variant="subtitle2" fontWeight={900}>
+          Точки разгрузки
+        </Typography>
+        <Button variant="outlined" size="small" startIcon={<AddLocationAltIcon />} onClick={addPoint} sx={{ borderRadius: 2.5 }}>
+          Добавить точку
+        </Button>
+      </Stack>
+      {safePoints.map((point, index) => (
+        <Box key={index} sx={{ pt: index ? 0.5 : 0 }}>
+          <Stack direction="row" spacing={1} alignItems="flex-start">
+            <Box sx={{ flex: 1 }}>
+              <AddressSearchField
+                label={`Разгрузка ${index + 1}`}
+                value={point.address}
+                required
+                onChange={(address) => updatePoint(index, { address, latitude: "", longitude: "" })}
+                onSelect={(place) =>
+                  updatePoint(index, {
+                    address: place.address,
+                    latitude: place.latitude,
+                    longitude: place.longitude
+                  })
+                }
+              />
+            </Box>
+            <Tooltip title="Удалить точку">
+              <span>
+                <IconButton disabled={safePoints.length === 1} color="error" onClick={() => removePoint(index)}>
+                  <DeleteIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
 
 export default function CargoRequestsPage() {
   const [clients, setClients] = useState([]);
@@ -73,12 +134,20 @@ export default function CargoRequestsPage() {
         weightKg: "",
         volume: "",
         pickupAddress: "",
-        deliveryPointsText: "",
+        deliveryPoints: [emptyDeliveryPoint()],
         desiredDeliveryDate: "",
         status: "NEW"
       }}
       transformBeforeSubmit={(form) => {
-        const deliveryPoints = parseDeliveryPoints(form.deliveryPointsText);
+        const deliveryPoints = (form.deliveryPoints || [])
+          .map((point, index) => ({
+            address: String(point.address || "").trim(),
+            latitude: point.latitude,
+            longitude: point.longitude,
+            orderNumber: index + 1
+          }))
+          .filter((point) => point.address);
+
         return {
           clientId: form.clientId,
           cargoName: form.cargoName,
@@ -117,16 +186,32 @@ export default function CargoRequestsPage() {
         { name: "cargoName", label: "Груз", required: true },
         { name: "weightKg", label: "Вес, кг", type: "number", required: true },
         { name: "volume", label: "Объем, м3", type: "number", required: true },
-        { name: "pickupAddress", label: "Адрес погрузки", fullWidth: true, required: true },
         {
-          name: "deliveryPointsText",
+          name: "pickupAddress",
+          label: "Адрес погрузки",
+          fullWidth: true,
+          required: true,
+          render: ({ form, setForm }) => (
+            <AddressSearchField
+              label="Адрес погрузки"
+              value={form.pickupAddress}
+              required
+              onChange={(address) => setForm((prev) => ({ ...prev, pickupAddress: address }))}
+              onSelect={(place) => setForm((prev) => ({ ...prev, pickupAddress: place.address }))}
+            />
+          )
+        },
+        {
+          name: "deliveryPoints",
           label: "Точки разгрузки",
           fullWidth: true,
-          multiline: true,
-          required: true,
-          getValue: deliveryPointsToText,
-          placeholder: "Москва, Ленинградский проспект, 80 | 55.805 | 37.515\nМытищи, ул. Мира, 15 | 55.9105 | 37.7363",
-          helperText: "Каждая точка с новой строки. Координаты можно не указывать, система подберет примерные."
+          getValue: deliveryPointsFromRow,
+          render: ({ form, setForm }) => (
+            <DeliveryPointsField
+              points={form.deliveryPoints}
+              onChange={(deliveryPoints) => setForm((prev) => ({ ...prev, deliveryPoints }))}
+            />
+          )
         },
         { name: "desiredDeliveryDate", label: "Дата и время выполнения", type: "datetime-local", required: true },
         { name: "status", label: "Статус", type: "select", options: statusOptions, required: true }

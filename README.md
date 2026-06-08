@@ -62,6 +62,7 @@ JWT_SECRET="change-this-secret"
 PORT=4000
 HOST=127.0.0.1
 CLIENT_URL="http://localhost:5173"
+GEOCODING_USER_AGENT="logistics-coursework/1.0 (student coursework)"
 ```
 
 Для frontend тоже есть пример переменных:
@@ -218,6 +219,7 @@ http://127.0.0.1:4000/api/openapi.json
 - `/api/clients`
 - `/api/cargo-requests`
 - `/api/routes`
+- `/api/geocoding`
 - `/api/recommendations`
 - `/api/waybills`
 - `/api/reports`

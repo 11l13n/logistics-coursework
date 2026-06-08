@@ -191,6 +191,7 @@ const options = {
       { name: "Clients", description: "Управление клиентами" },
       { name: "Cargo Requests", description: "Заявки на перевозку" },
       { name: "Routes", description: "Маршруты перевозок" },
+      { name: "Geocoding", description: "Поиск адресов и координат" },
       { name: "Recommendations", description: "Рекомендации по назначению ресурсов" },
       { name: "Waybills", description: "Путевые листы" },
       { name: "Reports", description: "Отчеты" }
@@ -357,6 +358,20 @@ const options = {
             },
             ref("DeliveryPointInput")
           ]
+        },
+        GeocodingResult: {
+          type: "object",
+          properties: {
+            id: { type: "string", example: "123456789" },
+            address: {
+              type: "string",
+              example: "Ленинградский проспект, район Аэропорт, Москва, Россия"
+            },
+            latitude: { type: "number", example: 55.805 },
+            longitude: { type: "number", example: 37.515 },
+            type: { type: "string", example: "road" },
+            category: { type: "string", example: "highway" }
+          }
         },
         CargoRequest: {
           type: "object",
@@ -700,6 +715,27 @@ const options = {
       }),
       "/routes/{id}/archive": archiveActions("Routes", ref("Route")),
       "/routes/{id}/unarchive": unarchiveActions("Routes", ref("Route")),
+      "/geocoding/search": {
+        get: {
+          tags: ["Geocoding"],
+          summary: "Найти адреса через OpenStreetMap Nominatim",
+          parameters: [
+            {
+              name: "q",
+              in: "query",
+              required: true,
+              schema: { type: "string", minLength: 3 },
+              description: "Строка адреса"
+            }
+          ],
+          responses: {
+            200: response("Найденные адреса", arrayOf("GeocodingResult")),
+            400: errorResponses[400],
+            401: errorResponses[401],
+            403: errorResponses[403]
+          }
+        }
+      },
       "/recommendations/route": {
         post: {
           tags: ["Recommendations"],

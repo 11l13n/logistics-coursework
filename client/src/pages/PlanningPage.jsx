@@ -4,8 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   FormControl,
   Grid,
   IconButton,
@@ -24,6 +22,7 @@ import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import http, { getErrorMessage } from "../api/http";
+import AddressSearchField from "../components/AddressSearchField";
 import RouteMap from "../components/RouteMap";
 import StatusChip from "../components/StatusChip";
 import { dateTimeTomorrow, formatDateTime, inputDateTime } from "../utils/format";
@@ -151,9 +150,9 @@ export default function PlanningPage() {
     setDeliveryPoints((prev) => [
       ...prev,
       {
-        address: "Новая точка разгрузки",
-        latitude: 55.91,
-        longitude: 37.73,
+        address: "",
+        latitude: 55.751244 + (prev.length + 1) * 0.08,
+        longitude: 37.618423 + (prev.length + 1) * 0.08,
         orderNumber: prev.length + 2
       }
     ]);
@@ -215,47 +214,61 @@ export default function PlanningPage() {
   };
 
   return (
-    <Stack spacing={2.5}>
+    <Stack spacing={2.5} sx={{ minHeight: { lg: "calc(100vh - 48px)" } }}>
       <Typography variant="h4">Планирование маршрута</Typography>
       {error && <Alert severity="error">{error}</Alert>}
       {success && <Alert severity="success">{success}</Alert>}
 
-      <Grid container spacing={2.5}>
-        <Grid item xs={12} lg={5}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Stack spacing={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Заявка</InputLabel>
-                <Select label="Заявка" value={selectedRequestId} onChange={(event) => setSelectedRequestId(event.target.value)}>
-                  {requests.map((request) => (
-                    <MenuItem key={request.id} value={request.id}>
-                      #{request.id} · {request.cargoName} · до {formatDateTime(request.desiredDeliveryDate)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+      <Grid container spacing={2.5} sx={{ flex: { lg: 1 }, alignItems: "stretch" }}>
+        <Grid item xs={12} lg={4}>
+          <Paper variant="outlined" sx={{ p: 2.25, height: "100%" }}>
+            <Stack spacing={2.25}>
+              <Stack spacing={1.25}>
+                <Typography variant="subtitle1" fontWeight={900}>
+                  Заявка
+                </Typography>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Заявка</InputLabel>
+                  <Select label="Заявка" value={selectedRequestId} onChange={(event) => setSelectedRequestId(event.target.value)}>
+                    {requests.map((request) => (
+                      <MenuItem key={request.id} value={request.id}>
+                        #{request.id} · {request.cargoName} · до {formatDateTime(request.desiredDeliveryDate)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {selectedRequest && (
+                  <Box
+                    sx={{
+                      borderLeft: 3,
+                      borderColor: "secondary.main",
+                      borderRadius: 2,
+                      bgcolor: "action.hover",
+                      px: 1.5,
+                      py: 1.25
+                    }}
+                  >
+                    <Stack spacing={0.75}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                        <Typography fontWeight={900}>{selectedRequest.client?.name}</Typography>
+                        <StatusChip value={selectedRequest.status} />
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedRequest.cargoName}, {selectedRequest.weightKg} кг, {selectedRequest.volume} м3
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatDateTime(selectedRequest.desiredDeliveryDate)} · {deliveryPoints.length} точек
+                      </Typography>
+                    </Stack>
+                  </Box>
+                )}
+              </Stack>
 
               {!requests.length && (
                 <Alert severity="info">
                   Нет новых заявок для планирования. Выполненные, отмененные и уже запланированные заявки недоступны для создания маршрута.
                 </Alert>
-              )}
-
-              {selectedRequest && (
-                <Card variant="outlined">
-                  <CardContent>
-                    <Stack spacing={1}>
-                      <Typography fontWeight={900}>{selectedRequest.client?.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {selectedRequest.cargoName}, {selectedRequest.weightKg} кг, {selectedRequest.volume} м3
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Выполнить: {formatDateTime(selectedRequest.desiredDeliveryDate)} · точек разгрузки: {deliveryPoints.length}
-                      </Typography>
-                      <StatusChip value={selectedRequest.status} />
-                    </Stack>
-                  </CardContent>
-                </Card>
               )}
 
               <TextField
@@ -264,36 +277,49 @@ export default function PlanningPage() {
                 value={plannedDate}
                 InputProps={{ readOnly: true }}
                 InputLabelProps={{ shrink: true }}
-                helperText="Дата маршрута берется из заявки, чтобы рейс планировался под согласованный срок."
               />
 
-              <TextField
-                label="Точка загрузки"
-                value={start.address}
-                onChange={(event) => setStart((prev) => ({ ...prev, address: event.target.value }))}
-              />
-              <Grid container spacing={1}>
-                <Grid item xs={6}>
-                  <TextField label="Широта" type="number" value={start.latitude} onChange={(event) => setStart((prev) => ({ ...prev, latitude: event.target.value }))} fullWidth />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField label="Долгота" type="number" value={start.longitude} onChange={(event) => setStart((prev) => ({ ...prev, longitude: event.target.value }))} fullWidth />
-                </Grid>
-              </Grid>
-
-              <Stack spacing={1.25}>
-                <Typography variant="subtitle2" fontWeight={900}>
-                  Точки разгрузки
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle1" fontWeight={900}>
+                  Адреса маршрута
                 </Typography>
+                <AddressSearchField
+                  label="Точка загрузки"
+                  value={start.address}
+                  required
+                  onChange={(address) => setStart((prev) => ({ ...prev, address, ...inferAddressCoordinates(address) }))}
+                  onSelect={(place) =>
+                    setStart((prev) => ({
+                      ...prev,
+                      address: place.address,
+                      latitude: place.latitude,
+                      longitude: place.longitude
+                    }))
+                  }
+                />
                 {deliveryPoints.map((point, index) => (
-                  <Box key={`${point.address}-${index}`}>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                      <TextField
-                        label={`Разгрузка ${index + 1}`}
-                        value={point.address}
-                        onChange={(event) => updateDeliveryPoint(index, { address: event.target.value })}
-                        fullWidth
-                      />
+                  <Box key={index}>
+                    <Stack direction="row" spacing={1} alignItems="flex-start">
+                      <Box sx={{ flex: 1 }}>
+                        <AddressSearchField
+                          label={`Разгрузка ${index + 1}`}
+                          value={point.address}
+                          required
+                          onChange={(address) =>
+                            updateDeliveryPoint(index, {
+                              address,
+                              ...inferAddressCoordinates(address, index + 1)
+                            })
+                          }
+                          onSelect={(place) =>
+                            updateDeliveryPoint(index, {
+                              address: place.address,
+                              latitude: place.latitude,
+                              longitude: place.longitude
+                            })
+                          }
+                        />
+                      </Box>
                       <Tooltip title="Удалить точку">
                         <span>
                           <IconButton disabled={deliveryPoints.length === 1} color="error" onClick={() => removeDeliveryPoint(index)}>
@@ -302,69 +328,88 @@ export default function PlanningPage() {
                         </span>
                       </Tooltip>
                     </Stack>
-                    <Grid container spacing={1}>
-                      <Grid item xs={6}>
-                        <TextField label="Широта" type="number" value={point.latitude} onChange={(event) => updateDeliveryPoint(index, { latitude: event.target.value })} fullWidth />
-                      </Grid>
-                      <Grid item xs={6}>
-                        <TextField label="Долгота" type="number" value={point.longitude} onChange={(event) => updateDeliveryPoint(index, { longitude: event.target.value })} fullWidth />
-                      </Grid>
-                    </Grid>
                   </Box>
                 ))}
+                <Button variant="outlined" startIcon={<AddLocationAltIcon />} onClick={addDeliveryPoint} fullWidth>
+                  Добавить точку разгрузки
+                </Button>
               </Stack>
-
-              <Button variant="outlined" startIcon={<AddLocationAltIcon />} onClick={addDeliveryPoint}>
-                Добавить точку разгрузки
-              </Button>
             </Stack>
           </Paper>
         </Grid>
 
-        <Grid item xs={12} lg={7}>
+        <Grid item xs={12} lg={8}>
           <Stack spacing={2}>
-            <RouteMap points={points} height={380} />
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField label="Расстояние, км" value={distanceKm} fullWidth InputProps={{ readOnly: true }} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField label="Примерное время" value={estimatedDuration} fullWidth InputProps={{ readOnly: true }} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Водитель</InputLabel>
-                  <Select label="Водитель" value={driverId} onChange={(event) => setDriverId(event.target.value)}>
-                    {drivers.map((driver) => (
-                      <MenuItem key={driver.id} value={driver.id}>
-                        {driver.fullName} · {driver.status}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Автомобиль</InputLabel>
-                  <Select label="Автомобиль" value={vehicleId} onChange={(event) => setVehicleId(event.target.value)}>
-                    {vehicles.map((vehicle) => (
-                      <MenuItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.brand} {vehicle.model} · {vehicle.plateNumber}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
+            <RouteMap points={points} height="clamp(420px, calc(100vh - 300px), 720px)" />
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
-              <Button variant="outlined" startIcon={<AutoAwesomeIcon />} disabled={!selectedRequestId} onClick={getRecommendation}>
-                Получить рекомендацию
-              </Button>
-              <Button variant="contained" startIcon={<SaveIcon />} disabled={!selectedRequestId || !driverId || !vehicleId} onClick={createRoute}>
-                Создать маршрут
-              </Button>
-            </Stack>
+            <Paper variant="outlined" sx={{ p: 2.25 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={4}>
+                  <Stack direction={{ xs: "row", md: "column" }} spacing={1.25}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Расстояние
+                      </Typography>
+                      <Typography variant="h5" fontWeight={900}>
+                        {distanceKm} км
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Примерное время
+                      </Typography>
+                      <Typography variant="h5" fontWeight={900}>
+                        {estimatedDuration}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Grid>
+
+                <Grid item xs={12} md={8}>
+                  <Grid container spacing={1.5}>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Водитель</InputLabel>
+                        <Select label="Водитель" value={driverId} onChange={(event) => setDriverId(event.target.value)}>
+                          {drivers.map((driver) => (
+                            <MenuItem key={driver.id} value={driver.id}>
+                              {driver.fullName} · {driver.status}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Автомобиль</InputLabel>
+                        <Select label="Автомобиль" value={vehicleId} onChange={(event) => setVehicleId(event.target.value)}>
+                          {vehicles.map((vehicle) => (
+                            <MenuItem key={vehicle.id} value={vehicle.id}>
+                              {vehicle.brand} {vehicle.model} · {vehicle.plateNumber}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="flex-end" spacing={1.25}>
+                        <Button variant="outlined" startIcon={<AutoAwesomeIcon />} disabled={!selectedRequestId} onClick={getRecommendation}>
+                          Получить рекомендацию
+                        </Button>
+                        <Button
+                          variant="contained"
+                          startIcon={<SaveIcon />}
+                          disabled={!selectedRequestId || !driverId || !vehicleId}
+                          onClick={createRoute}
+                        >
+                          Создать маршрут
+                        </Button>
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+            </Paper>
 
             {recommendation && (
               <Paper variant="outlined" sx={{ p: 2 }}>

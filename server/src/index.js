@@ -8,6 +8,7 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const routeRoutes = require("./routes/routes");
 const waybillRoutes = require("./routes/waybills");
+const geocodingRoutes = require("./routes/geocoding");
 const recommendationRoutes = require("./routes/recommendations");
 const reportRoutes = require("./routes/reports");
 const cargoRequestRoutes = require("./routes/cargoRequests");
@@ -87,6 +88,7 @@ app.use(
 );
 app.use("/api/cargo-requests", cargoRequestRoutes);
 app.use("/api/routes", routeRoutes);
+app.use("/api/geocoding", geocodingRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/waybills", waybillRoutes);
 app.use("/api/reports", reportRoutes);

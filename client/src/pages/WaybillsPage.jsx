@@ -252,10 +252,16 @@ export default function WaybillsPage() {
         </Table>
       </TableContainer>
 
-      <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 4, overflow: "hidden" } }}
+      >
         <form onSubmit={save}>
-          <DialogTitle>Путевой лист {editing?.number}</DialogTitle>
-          <DialogContent dividers>
+          <DialogTitle sx={{ px: 3, py: 2.25, fontSize: 28, fontWeight: 900 }}>Путевой лист {editing?.number}</DialogTitle>
+          <DialogContent dividers sx={{ px: 3, py: 2.5 }}>
             <Stack spacing={2}>
               <Typography color="text.secondary">
                 Выезд: {formatDateTime(editing?.departureTime)} · Возвращение: {formatDateTime(editing?.returnTime)}
@@ -282,9 +288,11 @@ export default function WaybillsPage() {
               </Grid>
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditing(null)}>Отмена</Button>
-            <Button type="submit" variant="contained">
+          <DialogActions sx={{ px: 3, py: 2, bgcolor: "action.hover" }}>
+            <Button onClick={() => setEditing(null)} sx={{ minWidth: 120, borderRadius: 2.5 }}>
+              Отмена
+            </Button>
+            <Button type="submit" variant="contained" sx={{ minWidth: 150, borderRadius: 2.5 }}>
               Сохранить
             </Button>
           </DialogActions>
