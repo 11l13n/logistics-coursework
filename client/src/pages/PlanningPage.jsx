@@ -202,7 +202,20 @@ export default function PlanningPage() {
   const applyOptimizedWaypoints = (waypoints = []) => {
     if (waypoints.length < 2) return;
     const [optimizedStart, ...optimizedDeliveries] = waypoints;
-    setStart(optimizedStart);
+    setStart((prev) => {
+      const keepCurrentCoordinates =
+        prev.address === optimizedStart.address &&
+        Number.isFinite(Number(prev.latitude)) &&
+        Number.isFinite(Number(prev.longitude));
+
+      return keepCurrentCoordinates
+        ? {
+            ...optimizedStart,
+            latitude: prev.latitude,
+            longitude: prev.longitude
+          }
+        : optimizedStart;
+    });
     setDeliveryPoints(optimizedDeliveries);
   };
 
