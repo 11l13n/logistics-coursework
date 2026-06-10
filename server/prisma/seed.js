@@ -3,12 +3,12 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
-const addDays = (days) => {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  date.setHours(9, 0, 0, 0);
-  return date;
+const dateAt = (value, hours = 9, minutes = 0) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
 };
+
+const addHours = (date, hours) => new Date(date.getTime() + hours * 60 * 60 * 1000);
 
 const hash = (password) => bcrypt.hash(password, 10);
 
@@ -136,8 +136,6 @@ async function main() {
     })
   ]);
 
-  void kamaz;
-
   const [client1, client2, client3] = await Promise.all([
     prisma.client.create({
       data: {
@@ -168,179 +166,230 @@ async function main() {
     })
   ]);
 
-  const [request1, request2, request3, request4] = await Promise.all([
-    prisma.cargoRequest.create({
-      data: {
-        clientId: client1.id,
-        cargoName: "Бытовая техника",
-        weightKg: 850,
-        volume: 5.6,
-        pickupAddress: "Москва, ул. Рябиновая, 22",
-        deliveryAddress: "Тверь, ул. Коминтерна, 45",
-        desiredDeliveryDate: addDays(1),
-        status: "PLANNED",
-        deliveryPoints: {
-          create: [
-            { address: "Тверь, ул. Коминтерна, 45", latitude: 56.8587, longitude: 35.9176, orderNumber: 1 }
-          ]
-        }
-      }
-    }),
-    prisma.cargoRequest.create({
-      data: {
-        clientId: client2.id,
-        cargoName: "Строительные материалы",
-        weightKg: 4200,
-        volume: 14.2,
-        pickupAddress: "Москва, Новорязанское шоссе, 3",
-        deliveryAddress: "Калуга, ул. Московская, 271",
-        desiredDeliveryDate: addDays(3),
-        status: "IN_PROGRESS",
-        deliveryPoints: {
-          create: [
-            { address: "Калуга, ул. Московская, 271", latitude: 54.5146, longitude: 36.2612, orderNumber: 1 },
-            { address: "Калуга, ул. Кирова, 21", latitude: 54.512, longitude: 36.246, orderNumber: 2 }
-          ]
-        }
-      }
-    }),
-    prisma.cargoRequest.create({
-      data: {
-        clientId: client3.id,
-        cargoName: "Мебель",
-        weightKg: 1200,
-        volume: 8.4,
-        pickupAddress: "Химки, Вашутинское шоссе, 9",
-        deliveryAddress: "Москва, Ленинградский проспект, 80",
-        desiredDeliveryDate: addDays(2),
-        status: "NEW",
-        deliveryPoints: {
-          create: [
-            { address: "Москва, Ленинградский проспект, 80", latitude: 55.805, longitude: 37.515, orderNumber: 1 },
-            { address: "Мытищи, ул. Мира, 15", latitude: 55.9105, longitude: 37.7363, orderNumber: 2 },
-            { address: "Балашиха, проспект Ленина, 25", latitude: 55.7963, longitude: 37.9382, orderNumber: 3 }
-          ]
-        }
-      }
-    }),
-    prisma.cargoRequest.create({
-      data: {
-        clientId: client1.id,
-        cargoName: "Офисное оборудование",
-        weightKg: 650,
-        volume: 3.1,
-        pickupAddress: "Москва, ул. Складочная, 12",
-        deliveryAddress: "Москва, Пресненская наб., 10",
-        desiredDeliveryDate: addDays(-2),
-        status: "COMPLETED",
-        deliveryPoints: {
-          create: [
-            { address: "Москва, Пресненская наб., 10", latitude: 55.7473, longitude: 37.5398, orderNumber: 1 }
-          ]
-        }
-      }
-    })
-  ]);
-
-  void request2;
-  void request3;
-
-  const plannedRoute = await prisma.route.create({
-    data: {
-      cargoRequestId: request1.id,
-      driverId: driver1.id,
-      vehicleId: gazelle.id,
-      startAddress: request1.pickupAddress,
-      endAddress: request1.deliveryAddress,
-      distanceKm: 174,
-      estimatedDuration: "3 ч 10 мин",
-      plannedDate: addDays(1),
-      status: "PLANNED",
-      waypoints: {
-        create: [
-          { address: request1.pickupAddress, latitude: 55.7029, longitude: 37.4281, orderNumber: 1 },
-          { address: "Волоколамское шоссе", latitude: 55.8317, longitude: 37.3896, orderNumber: 2 },
-          { address: request1.deliveryAddress, latitude: 56.8587, longitude: 35.9176, orderNumber: 3 }
-        ]
-      }
-    }
-  });
-
-  await prisma.waybill.create({
-    data: {
-      routeId: plannedRoute.id,
-      number: `PL-${new Date().getFullYear()}-0001`,
-      issueDate: new Date(),
-      startMileage: 124300,
-      plannedFuel: 21.75,
-      status: "CREATED"
-    }
-  });
-
-  const completedRoute = await prisma.route.create({
-    data: {
-      cargoRequestId: request4.id,
-      driverId: driver2.id,
-      vehicleId: ford.id,
-      startAddress: request4.pickupAddress,
-      endAddress: request4.deliveryAddress,
+  const routeFixtures = [
+    {
+      client: client1,
+      driver: driver1,
+      vehicle: gazelle,
+      cargoName: "Архив: офисное оборудование",
+      weightKg: 650,
+      volume: 3.1,
+      start: { address: "Москва, ул. Складочная, 12", latitude: 55.7998, longitude: 37.5898 },
+      deliveryPoints: [{ address: "Москва, Пресненская наб., 10", latitude: 55.7473, longitude: 37.5398 }],
+      plannedDate: dateAt("2026-06-02", 9),
       distanceKm: 18,
-      estimatedDuration: "55 мин",
-      plannedDate: addDays(-2),
-      status: "COMPLETED",
-      waypoints: {
-        create: [
-          { address: request4.pickupAddress, latitude: 55.7998, longitude: 37.5898, orderNumber: 1 },
-          { address: request4.deliveryAddress, latitude: 55.7473, longitude: 37.5398, orderNumber: 2 }
-        ]
-      }
-    }
-  });
-
-  await prisma.waybill.create({
-    data: {
-      routeId: completedRoute.id,
-      number: `PL-${new Date().getFullYear()}-0002`,
-      issueDate: addDays(-2),
-      departureTime: addDays(-2),
-      returnTime: addDays(-2),
+      estimatedDuration: "36 мин",
+      plannedFuel: 2.25,
+      actualFuel: 2.4,
       startMileage: 88300,
-      endMileage: 88321,
-      plannedFuel: 1.94,
-      actualFuel: 2.2,
-      status: "COMPLETED"
-    }
-  });
-
-  await prisma.route.create({
-    data: {
-      cargoRequestId: request2.id,
-      driverId: driver3.id,
-      vehicleId: man.id,
-      startAddress: request2.pickupAddress,
-      endAddress: request2.deliveryAddress,
+      endMileage: 88318,
+      status: "COMPLETED",
+      archivedAt: dateAt("2026-06-05", 18),
+      waybillStatus: "COMPLETED"
+    },
+    {
+      client: client2,
+      driver: driver2,
+      vehicle: ford,
+      cargoName: "Архив: торговое оборудование",
+      weightKg: 920,
+      volume: 4.8,
+      start: { address: "Москва, Ленинградский проспект, 80", latitude: 55.805, longitude: 37.515 },
+      deliveryPoints: [{ address: "Химки, Вашутинское шоссе, 9", latitude: 55.897, longitude: 37.4297 }],
+      plannedDate: dateAt("2026-06-03", 10),
+      distanceKm: 24.6,
+      estimatedDuration: "45 мин",
+      plannedFuel: 2.66,
+      actualFuel: 2.8,
+      startMileage: 74120,
+      endMileage: 74145,
+      status: "COMPLETED",
+      archivedAt: dateAt("2026-06-05", 18, 10),
+      waybillStatus: "COMPLETED"
+    },
+    {
+      client: client3,
+      driver: driver3,
+      vehicle: man,
+      cargoName: "Архив: мебель",
+      weightKg: 1800,
+      volume: 12.4,
+      start: { address: "Москва, ул. Рябиновая, 22", latitude: 55.7029, longitude: 37.4281 },
+      deliveryPoints: [{ address: "Тверь, ул. Коминтерна, 45", latitude: 56.8587, longitude: 35.9176 }],
+      plannedDate: dateAt("2026-06-04", 8, 30),
+      distanceKm: 174,
+      estimatedDuration: "4 ч 19 мин",
+      plannedFuel: 32.36,
+      actualFuel: 34.1,
+      startMileage: 221900,
+      endMileage: 222074,
+      status: "COMPLETED",
+      archivedAt: dateAt("2026-06-05", 18, 20),
+      waybillStatus: "COMPLETED"
+    },
+    {
+      client: client1,
+      driver: driver1,
+      vehicle: gazelle,
+      cargoName: "Пятница: бытовая техника",
+      weightKg: 850,
+      volume: 5.6,
+      start: { address: "Москва, ул. Рябиновая, 22", latitude: 55.7029, longitude: 37.4281 },
+      deliveryPoints: [{ address: "Тверь, ул. Коминтерна, 45", latitude: 56.8587, longitude: 35.9176 }],
+      plannedDate: dateAt("2026-06-12", 9),
+      distanceKm: 174,
+      estimatedDuration: "4 ч 19 мин",
+      plannedFuel: 21.75,
+      status: "PLANNED",
+      waybillStatus: "CREATED"
+    },
+    {
+      client: client2,
+      driver: driver2,
+      vehicle: ford,
+      cargoName: "Пятница: комплектующие",
+      weightKg: 1300,
+      volume: 7.2,
+      start: { address: "Москва, Новорязанское шоссе, 3", latitude: 55.6525, longitude: 37.8895 },
+      deliveryPoints: [{ address: "Калуга, ул. Московская, 271", latitude: 54.5146, longitude: 36.2612 }],
+      plannedDate: dateAt("2026-06-12", 11),
       distanceKm: 188,
-      estimatedDuration: "3 ч 40 мин",
-      plannedDate: addDays(3),
-      status: "IN_PROGRESS",
-      waybill: {
-        create: {
-          number: `PL-${new Date().getFullYear()}-0003`,
-          issueDate: new Date(),
-          departureTime: new Date(),
-          startMileage: 221900,
-          plannedFuel: 34.97,
-          status: "ACTIVE"
-        }
-      },
-      waypoints: {
-        create: [
-          { address: request2.pickupAddress, latitude: 55.6525, longitude: 37.8895, orderNumber: 1 },
-          { address: request2.deliveryAddress, latitude: 54.5146, longitude: 36.2612, orderNumber: 2 }
-        ]
-      }
+      estimatedDuration: "4 ч 39 мин",
+      plannedFuel: 20.3,
+      status: "PLANNED",
+      waybillStatus: "CREATED"
+    },
+    {
+      client: client3,
+      driver: driver3,
+      vehicle: man,
+      cargoName: "Пятница: мебель",
+      weightKg: 2400,
+      volume: 16.5,
+      start: { address: "Химки, Вашутинское шоссе, 9", latitude: 55.897, longitude: 37.4297 },
+      deliveryPoints: [
+        { address: "Москва, Ленинградский проспект, 80", latitude: 55.805, longitude: 37.515 },
+        { address: "Мытищи, ул. Мира, 15", latitude: 55.9105, longitude: 37.7363 }
+      ],
+      plannedDate: dateAt("2026-06-12", 14),
+      distanceKm: 55.4,
+      estimatedDuration: "1 ч 29 мин",
+      plannedFuel: 10.3,
+      status: "PLANNED",
+      waybillStatus: "CREATED"
+    },
+    {
+      client: client1,
+      driver: driver1,
+      vehicle: gazelle,
+      cargoName: "Суббота: документы",
+      weightKg: 180,
+      volume: 1.1,
+      start: { address: "Москва, Пресненская наб., 10", latitude: 55.7473, longitude: 37.5398 },
+      deliveryPoints: [{ address: "Балашиха, проспект Ленина, 25", latitude: 55.7963, longitude: 37.9382 }],
+      plannedDate: dateAt("2026-06-13", 9, 30),
+      distanceKm: 32.8,
+      estimatedDuration: "57 мин",
+      plannedFuel: 4.1,
+      status: "PLANNED",
+      waybillStatus: "CREATED"
+    },
+    {
+      client: client2,
+      driver: driver2,
+      vehicle: kamaz,
+      cargoName: "Суббота: стройматериалы",
+      weightKg: 6200,
+      volume: 20.4,
+      start: { address: "Москва, Новорязанское шоссе, 3", latitude: 55.6525, longitude: 37.8895 },
+      deliveryPoints: [{ address: "Калуга, ул. Кирова, 21", latitude: 54.512, longitude: 36.246 }],
+      plannedDate: dateAt("2026-06-13", 12),
+      distanceKm: 181.2,
+      estimatedDuration: "4 ч 29 мин",
+      plannedFuel: 53.45,
+      status: "PLANNED",
+      waybillStatus: "CREATED"
+    },
+    {
+      client: client3,
+      driver: driver3,
+      vehicle: man,
+      cargoName: "Суббота: сборный груз",
+      weightKg: 2100,
+      volume: 10.8,
+      start: { address: "Москва, ул. Складочная, 12", latitude: 55.7998, longitude: 37.5898 },
+      deliveryPoints: [
+        { address: "Одинцово, Можайское шоссе, 71", latitude: 55.6789, longitude: 37.2636 },
+        { address: "Красногорск, Ильинское шоссе, 1А", latitude: 55.8196, longitude: 37.3305 }
+      ],
+      plannedDate: dateAt("2026-06-13", 15),
+      distanceKm: 62.5,
+      estimatedDuration: "1 ч 39 мин",
+      plannedFuel: 11.63,
+      status: "PLANNED",
+      waybillStatus: "CREATED"
     }
-  });
+  ];
+
+  for (const [index, fixture] of routeFixtures.entries()) {
+    const request = await prisma.cargoRequest.create({
+      data: {
+        clientId: fixture.client.id,
+        cargoName: fixture.cargoName,
+        weightKg: fixture.weightKg,
+        volume: fixture.volume,
+        pickupAddress: fixture.start.address,
+        deliveryAddress: fixture.deliveryPoints[fixture.deliveryPoints.length - 1].address,
+        desiredDeliveryDate: fixture.plannedDate,
+        status: fixture.status === "COMPLETED" ? "COMPLETED" : "PLANNED",
+        archivedAt: fixture.archivedAt || null,
+        deliveryPoints: {
+          create: fixture.deliveryPoints.map((point, pointIndex) => ({
+            address: point.address,
+            latitude: point.latitude,
+            longitude: point.longitude,
+            orderNumber: pointIndex + 1
+          }))
+        }
+      }
+    });
+
+    await prisma.route.create({
+      data: {
+        cargoRequestId: request.id,
+        driverId: fixture.driver.id,
+        vehicleId: fixture.vehicle.id,
+        startAddress: fixture.start.address,
+        endAddress: request.deliveryAddress,
+        distanceKm: fixture.distanceKm,
+        estimatedDuration: fixture.estimatedDuration,
+        plannedDate: fixture.plannedDate,
+        status: fixture.status,
+        archivedAt: fixture.archivedAt || null,
+        waybill: {
+          create: {
+            number: `PL-2026-${String(index + 1).padStart(4, "0")}`,
+            issueDate: fixture.plannedDate,
+            departureTime: fixture.status === "COMPLETED" ? fixture.plannedDate : null,
+            returnTime: fixture.status === "COMPLETED" ? addHours(fixture.plannedDate, 2) : null,
+            startMileage: fixture.startMileage || null,
+            endMileage: fixture.endMileage || null,
+            plannedFuel: fixture.plannedFuel,
+            actualFuel: fixture.actualFuel || null,
+            status: fixture.waybillStatus
+          }
+        },
+        waypoints: {
+          create: [fixture.start, ...fixture.deliveryPoints].map((point, pointIndex) => ({
+            address: point.address,
+            latitude: point.latitude,
+            longitude: point.longitude,
+            orderNumber: pointIndex + 1
+          }))
+        }
+      }
+    });
+  }
 
   console.log("Seed data created");
 }
