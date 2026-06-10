@@ -4,6 +4,8 @@ const auth = require("../middleware/auth");
 const requireRoles = require("../middleware/roles");
 const asyncHandler = require("../utils/asyncHandler");
 
+const readOnlyFields = new Set(["id", "createdAt", "updatedAt"]);
+
 function createCrudRouter({ model, searchFields = [], include, orderBy = { id: "desc" } }) {
   const router = express.Router();
   router.use(auth, requireRoles("ADMIN", "DISPATCHER"));
@@ -66,6 +68,9 @@ function normalizePayload(payload) {
   const data = {};
   Object.entries(payload).forEach(([key, value]) => {
     if (value === "" || value === undefined) return;
+    if (readOnlyFields.has(key)) return;
+    if (value && typeof value === "object" && !Array.isArray(value)) return;
+    if (Array.isArray(value)) return;
 
     if (
       [

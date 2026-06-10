@@ -13,6 +13,7 @@ const { normalizePayload } = require("../src/routes/resources");
 
 test("normalizePayload приводит числовые поля и даты к нужным типам", () => {
   const result = normalizePayload({
+    id: 12,
     cargoRequestId: "7",
     driverId: "3",
     vehicleId: "4",
@@ -20,6 +21,9 @@ test("normalizePayload приводит числовые поля и даты к
     actualFuel: "22.4",
     plannedDate: "2026-06-15T09:00:00.000Z",
     emptyValue: "",
+    updatedAt: "2026-06-15T09:00:00.000Z",
+    user: { id: 3, role: "DRIVER" },
+    routes: [],
     status: "PLANNED"
   });
 
@@ -30,7 +34,11 @@ test("normalizePayload приводит числовые поля и даты к
   assert.equal(result.actualFuel, 22.4);
   assert.equal(result.status, "PLANNED");
   assert.ok(result.plannedDate instanceof Date);
+  assert.equal("id" in result, false);
   assert.equal("emptyValue" in result, false);
+  assert.equal("updatedAt" in result, false);
+  assert.equal("user" in result, false);
+  assert.equal("routes" in result, false);
 });
 
 test("parseDeliveryPointsText разбирает точки разгрузки из многострочного текста", () => {

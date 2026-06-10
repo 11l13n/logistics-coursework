@@ -106,11 +106,18 @@ export default function ResourcePage({
     setEditingRow(null);
   };
 
+  const getFormPayload = () =>
+    fields.reduce((payload, field) => {
+      payload[field.name] = form[field.name];
+      return payload;
+    }, {});
+
   const submit = async (event) => {
     event.preventDefault();
     setError("");
 
-    const payload = transformBeforeSubmit ? transformBeforeSubmit(form, editingRow) : form;
+    const formPayload = getFormPayload();
+    const payload = transformBeforeSubmit ? transformBeforeSubmit(formPayload, editingRow) : formPayload;
 
     try {
       if (editingRow) {
