@@ -65,8 +65,11 @@ const distanceBetween = (a, b) => {
 const calculateDistance = (points) =>
   points.slice(1).reduce((sum, point, index) => sum + distanceBetween(points[index], point), 0);
 
+const trafficAverageSpeedKmh = 42;
+const trafficBufferMinutes = 10;
+
 const formatDuration = (distanceKm) => {
-  const minutes = Math.max(20, Math.round((Number(distanceKm) / 55) * 60));
+  const minutes = Math.max(30, Math.round((Number(distanceKm) / trafficAverageSpeedKmh) * 60 + trafficBufferMinutes));
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   if (!hours) return `${minutes} мин`;
@@ -131,6 +134,38 @@ export default function PlanningPage() {
       }))
     );
   }, [selectedRequest]);
+
+  useEffect(() => {
+    if (!selectedRequest?.pickupAddress) return;
+
+    let ignore = false;
+
+    const geocodePickupAddress = async () => {
+      try {
+        const { data } = await http.get("/geocoding/search", { params: { q: selectedRequest.pickupAddress } });
+        const place = data[0];
+        if (ignore || !place) return;
+
+        setStart((prev) => {
+          if (prev.address !== selectedRequest.pickupAddress) return prev;
+
+          return {
+            ...prev,
+            latitude: place.latitude,
+            longitude: place.longitude
+          };
+        });
+      } catch {
+        // Keep inferred coordinates if external geocoding is unavailable.
+      }
+    };
+
+    geocodePickupAddress();
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedRequest?.id, selectedRequest?.pickupAddress]);
 
   const points = useMemo(
     () =>
@@ -402,7 +437,7 @@ export default function PlanningPage() {
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        Примерное время без пробок
+                        Примерное время с учетом трафика
                       </Typography>
                       <Typography variant="h5" fontWeight={900}>
                         {estimatedDuration}

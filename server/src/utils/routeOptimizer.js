@@ -54,8 +54,11 @@ function calculateRouteDistance(points) {
   );
 }
 
+const trafficAverageSpeedKmh = 42;
+const trafficBufferMinutes = 10;
+
 function estimateDuration(distanceKm) {
-  const minutes = Math.max(20, Math.round((Number(distanceKm) / 55) * 60));
+  const minutes = Math.max(30, Math.round((Number(distanceKm) / trafficAverageSpeedKmh) * 60 + trafficBufferMinutes));
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
 

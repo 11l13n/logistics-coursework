@@ -98,8 +98,8 @@ test("calculateRouteDistance и estimateDuration считают понятные
 
   assert.ok(distance > 160);
   assert.ok(distance < 180);
-  assert.equal(estimateDuration(110), "2 ч");
-  assert.equal(estimateDuration(10), "20 мин");
+  assert.equal(estimateDuration(110), "2 ч 47 мин");
+  assert.equal(estimateDuration(10), "30 мин");
 });
 
 test("buildOptimizedRoute строит маршрут из заявки с несколькими точками", () => {
