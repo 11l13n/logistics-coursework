@@ -664,16 +664,16 @@ test("панель мониторинга получает статистику 
   assert.equal(response.body.totalFuel, 42);
 });
 
-test("отчет по водителям считает выполненные маршруты", async () => {
+test("отчет по водителям считает пробег за период", async () => {
   const dispatcherToken = await tokenFor("dispatcher@example.com", "dispatcher123");
   const response = await request("GET", "/api/reports/drivers?from=2026-06-01&to=2026-06-30", {
     token: dispatcherToken
   });
 
   assert.equal(response.status, 200);
-  assert.equal(response.body[0].id, 2);
-  assert.equal(response.body[0].completedRoutes, 1);
-  assert.equal(response.body[0].mileage, 150);
+  const driver = response.body.find((item) => item.id === 2);
+  assert.equal(driver.completedRoutes, 1);
+  assert.equal(driver.mileage, 150);
 });
 
 test("водитель видит только назначенные ему маршруты", async () => {

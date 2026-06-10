@@ -23,15 +23,34 @@ import http, { getErrorMessage } from "../api/http";
 import StatCard from "../components/StatCard";
 import { todayInput } from "../utils/format";
 
+const reportsPeriodStorageKey = "logistics_reports_period";
+
 const monthStart = () => {
   const date = new Date();
   date.setDate(1);
   return date.toISOString().slice(0, 10);
 };
 
+const isInputDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+
+const getInitialPeriod = () => {
+  const fallback = { from: monthStart(), to: todayInput() };
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(reportsPeriodStorageKey) || "{}");
+    return {
+      from: isInputDate(saved.from) ? saved.from : fallback.from,
+      to: isInputDate(saved.to) ? saved.to : fallback.to
+    };
+  } catch {
+    return fallback;
+  }
+};
+
 export default function ReportsPage() {
-  const [from, setFrom] = useState(monthStart());
-  const [to, setTo] = useState(todayInput());
+  const [initialPeriod] = useState(getInitialPeriod);
+  const [from, setFrom] = useState(initialPeriod.from);
+  const [to, setTo] = useState(initialPeriod.to);
   const [summary, setSummary] = useState(null);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -57,6 +76,14 @@ export default function ReportsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(reportsPeriodStorageKey, JSON.stringify({ from, to }));
+    } catch {
+      // The report still works if persistent browser storage is unavailable.
+    }
+  }, [from, to]);
 
   return (
     <Stack spacing={2.5}>
@@ -95,22 +122,20 @@ export default function ReportsPage() {
       <Grid container spacing={2.5}>
         <Grid item xs={12} lg={6}>
           <Typography variant="h6" fontWeight={900} sx={{ mb: 1.5 }}>
-            Рейтинг водителей
+            Пробег водителей
           </Typography>
           <TableContainer component={Paper} variant="outlined">
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>Водитель</TableCell>
-                  <TableCell>Выполнено</TableCell>
-                  <TableCell>Пробег</TableCell>
+                  <TableCell>Пробег, км</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {drivers.map((driver) => (
                   <TableRow key={driver.id} hover>
                     <TableCell>{driver.fullName}</TableCell>
-                    <TableCell>{driver.completedRoutes}</TableCell>
                     <TableCell>{driver.mileage} км</TableCell>
                   </TableRow>
                 ))}

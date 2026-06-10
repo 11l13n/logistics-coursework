@@ -69,7 +69,7 @@ router.get(
           return sum + Number(actual || 0);
         }, 0)
       }))
-      .sort((a, b) => b.completedRoutes - a.completedRoutes);
+      .sort((a, b) => a.fullName.localeCompare(b.fullName, "ru"));
 
     res.json(result);
   })
