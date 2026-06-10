@@ -122,21 +122,21 @@ export default function ReportsPage() {
       <Grid container spacing={2.5}>
         <Grid item xs={12} lg={6}>
           <Typography variant="h6" fontWeight={900} sx={{ mb: 1.5 }}>
-            Пробег водителей
+            Рейсы водителей
           </Typography>
           <TableContainer component={Paper} variant="outlined">
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>Водитель</TableCell>
-                  <TableCell>Пробег, км</TableCell>
+                  <TableCell>Выполнено рейсов</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {drivers.map((driver) => (
                   <TableRow key={driver.id} hover>
                     <TableCell>{driver.fullName}</TableCell>
-                    <TableCell>{driver.mileage} км</TableCell>
+                    <TableCell>{driver.completedRoutes}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
