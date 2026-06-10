@@ -5,6 +5,7 @@ const requireRoles = require("../middleware/roles");
 const asyncHandler = require("../utils/asyncHandler");
 const { getDayRange } = require("../utils/dates");
 const { plannedBusyStatuses, syncResourceRuntimeStatuses } = require("../utils/resourceAvailability");
+const { syncRouteStatus } = require("../utils/routeStatusSync");
 const { normalizePayload } = require("./resources");
 
 const router = express.Router();
@@ -39,57 +40,6 @@ const applyArchiveFilter = (where, archiveMode) => {
 };
 
 const activeRouteStatuses = plannedBusyStatuses;
-
-const updateLinkedStatuses = async (tx, route, status) => {
-  const completed = status === "COMPLETED";
-  const cancelled = status === "CANCELLED";
-
-  await syncResourceRuntimeStatuses(tx, route);
-
-  if (completed) {
-    await tx.cargoRequest.update({
-      where: { id: route.cargoRequestId },
-      data: { status: "COMPLETED" }
-    });
-    await tx.waybill.updateMany({
-      where: { routeId: route.id },
-      data: { status: "COMPLETED", returnTime: new Date() }
-    });
-  }
-
-  if (status === "PLANNED") {
-    await tx.cargoRequest.update({
-      where: { id: route.cargoRequestId },
-      data: { status: "PLANNED" }
-    });
-    await tx.waybill.updateMany({
-      where: { routeId: route.id },
-      data: { status: "CREATED", departureTime: null, returnTime: null }
-    });
-  }
-
-  if (cancelled) {
-    await tx.cargoRequest.update({
-      where: { id: route.cargoRequestId },
-      data: { status: "CANCELLED" }
-    });
-    await tx.waybill.updateMany({
-      where: { routeId: route.id },
-      data: { status: "CANCELLED" }
-    });
-  }
-
-  if (status === "IN_PROGRESS") {
-    await tx.cargoRequest.update({
-      where: { id: route.cargoRequestId },
-      data: { status: "IN_PROGRESS" }
-    });
-    await tx.waybill.updateMany({
-      where: { routeId: route.id },
-      data: { status: "ACTIVE", departureTime: new Date() }
-    });
-  }
-};
 
 router.get(
   "/",
@@ -314,7 +264,7 @@ router.put(
       });
 
       if (payload.status) {
-        await updateLinkedStatuses(tx, route, payload.status);
+        await syncRouteStatus(tx, route, payload.status);
       }
 
       return tx.route.findUnique({ where: { id: route.id }, include: routeInclude });

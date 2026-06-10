@@ -715,6 +715,55 @@ test("завершение рейса освобождает водителя и
   assert.equal(db.cargoRequests.find((requestItem) => requestItem.id === 2).status, "COMPLETED");
 });
 
+test("откат выполненного маршрута в план убирает его из выполненных отчетов", async () => {
+  const dispatcherToken = await tokenFor("dispatcher@example.com", "dispatcher123");
+  const response = await request("PUT", "/api/routes/2", {
+    token: dispatcherToken,
+    body: { status: "PLANNED" }
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.status, "PLANNED");
+  assert.equal(response.body.waybill.status, "CREATED");
+  assert.equal(response.body.waybill.startMileage, null);
+  assert.equal(response.body.waybill.endMileage, null);
+  assert.equal(response.body.waybill.actualFuel, null);
+  assert.equal(db.cargoRequests.find((requestItem) => requestItem.id === response.body.cargoRequestId).status, "PLANNED");
+
+  const reportResponse = await request("GET", "/api/reports/summary?from=2026-06-01&to=2026-06-30", {
+    token: dispatcherToken
+  });
+
+  assert.equal(reportResponse.status, 200);
+  assert.equal(reportResponse.body.completedRoutes, 0);
+  assert.equal(reportResponse.body.totalMileage, 0);
+  assert.equal(reportResponse.body.totalFuel, 0);
+});
+
+test("откат выполненного путевого листа синхронизирует маршрут и отчет", async () => {
+  const dispatcherToken = await tokenFor("dispatcher@example.com", "dispatcher123");
+  const response = await request("PUT", "/api/waybills/2", {
+    token: dispatcherToken,
+    body: { status: "CREATED" }
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.status, "CREATED");
+  assert.equal(response.body.startMileage, null);
+  assert.equal(response.body.endMileage, null);
+  assert.equal(response.body.actualFuel, null);
+  assert.equal(db.routes.find((route) => route.id === response.body.routeId).status, "PLANNED");
+  assert.equal(db.cargoRequests.find((requestItem) => requestItem.id === 3).status, "PLANNED");
+
+  const reportResponse = await request("GET", "/api/reports/drivers?from=2026-06-01&to=2026-06-30", {
+    token: dispatcherToken
+  });
+  const driver = reportResponse.body.find((item) => item.id === 2);
+
+  assert.equal(driver.completedRoutes, 0);
+  assert.equal(driver.mileage, 0);
+});
+
 test("панель мониторинга получает статистику по маршрутам", async () => {
   const dispatcherToken = await tokenFor("dispatcher@example.com", "dispatcher123");
   const response = await request("GET", "/api/reports/summary?from=2026-06-01&to=2026-06-30", {
@@ -724,8 +773,8 @@ test("панель мониторинга получает статистику 
   assert.equal(response.status, 200);
   assert.equal(response.body.routesCount, 2);
   assert.equal(response.body.completedRoutes, 1);
-  assert.equal(response.body.totalMileage, 330);
-  assert.equal(response.body.totalFuel, 42);
+  assert.equal(response.body.totalMileage, 150);
+  assert.equal(response.body.totalFuel, 24);
 });
 
 test("отчет по водителям считает пробег за период", async () => {

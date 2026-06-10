@@ -3,7 +3,7 @@ const prisma = require("../lib/prisma");
 const auth = require("../middleware/auth");
 const requireRoles = require("../middleware/roles");
 const asyncHandler = require("../utils/asyncHandler");
-const { syncResourceRuntimeStatuses } = require("../utils/resourceAvailability");
+const { syncRouteStatus } = require("../utils/routeStatusSync");
 const { normalizePayload } = require("./resources");
 
 const router = express.Router();
@@ -161,25 +161,27 @@ router.put(
         include
       });
 
-      if (data.status === "ACTIVE") {
-        await tx.route.update({ where: { id: existing.routeId }, data: { status: "IN_PROGRESS" } });
-        await tx.cargoRequest.update({
-          where: { id: existing.route.cargoRequestId },
-          data: { status: "IN_PROGRESS" }
+      const routeStatusByWaybillStatus = {
+        CREATED: "PLANNED",
+        ACTIVE: "IN_PROGRESS",
+        COMPLETED: "COMPLETED",
+        CANCELLED: "CANCELLED"
+      };
+      const nextRouteStatus = routeStatusByWaybillStatus[data.status];
+
+      if (nextRouteStatus) {
+        const route = await tx.route.update({
+          where: { id: existing.routeId },
+          data: { status: nextRouteStatus }
         });
-        await syncResourceRuntimeStatuses(tx, existing.route);
+        await syncRouteStatus(tx, route, nextRouteStatus, {
+          preserveActualFields: nextRouteStatus === "IN_PROGRESS",
+          preserveDepartureTime: nextRouteStatus === "IN_PROGRESS",
+          preserveReturnTime: nextRouteStatus === "COMPLETED"
+        });
       }
 
-      if (data.status === "COMPLETED") {
-        await tx.route.update({ where: { id: existing.routeId }, data: { status: "COMPLETED" } });
-        await tx.cargoRequest.update({
-          where: { id: existing.route.cargoRequestId },
-          data: { status: "COMPLETED" }
-        });
-        await syncResourceRuntimeStatuses(tx, existing.route);
-      }
-
-      return waybill;
+      return tx.waybill.findUnique({ where: { id: waybill.id }, include });
     });
 
     res.json(updated);

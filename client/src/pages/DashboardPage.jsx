@@ -38,11 +38,12 @@ export default function DashboardPage() {
   }, []);
 
   const stats = useMemo(() => {
-    const totalMileage = waybills.reduce((sum, item) => {
+    const completedWaybills = waybills.filter((item) => item.status === "COMPLETED" && item.route?.status === "COMPLETED");
+    const totalMileage = completedWaybills.reduce((sum, item) => {
       const actual = item.endMileage && item.startMileage ? item.endMileage - item.startMileage : item.route?.distanceKm;
       return sum + Number(actual || 0);
     }, 0);
-    const totalFuel = waybills.reduce((sum, item) => sum + Number(item.actualFuel ?? item.plannedFuel ?? 0), 0);
+    const totalFuel = completedWaybills.reduce((sum, item) => sum + Number(item.actualFuel ?? item.plannedFuel ?? 0), 0);
 
     return {
       routes: routes.length,

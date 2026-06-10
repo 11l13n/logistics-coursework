@@ -17,14 +17,16 @@ router.get(
       include: { waybill: true }
     });
 
-    const totalMileage = routes.reduce((sum, route) => {
+    const completedRoutes = routes.filter((route) => route.status === "COMPLETED");
+
+    const totalMileage = completedRoutes.reduce((sum, route) => {
       const actual = route.waybill?.endMileage && route.waybill?.startMileage
         ? route.waybill.endMileage - route.waybill.startMileage
         : route.distanceKm;
       return sum + Number(actual || 0);
     }, 0);
 
-    const totalFuel = routes.reduce((sum, route) => {
+    const totalFuel = completedRoutes.reduce((sum, route) => {
       const fuel = route.waybill?.actualFuel ?? route.waybill?.plannedFuel ?? 0;
       return sum + Number(fuel);
     }, 0);
@@ -33,7 +35,7 @@ router.get(
       period: { from: start, to: end },
       routesCount: routes.length,
       activeRoutes: routes.filter((route) => route.status === "IN_PROGRESS").length,
-      completedRoutes: routes.filter((route) => route.status === "COMPLETED").length,
+      completedRoutes: completedRoutes.length,
       cancelledRoutes: routes.filter((route) => route.status === "CANCELLED").length,
       totalMileage: Number(totalMileage.toFixed(1)),
       totalFuel: Number(totalFuel.toFixed(1))
