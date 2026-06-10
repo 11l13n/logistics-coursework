@@ -400,6 +400,59 @@ async function main() {
     });
   }
 
+  const unplannedRequestFixtures = [
+    {
+      client: client1,
+      cargoName: "Воскресенье: канцелярия",
+      weightKg: 480,
+      volume: 3.4,
+      pickupAddress: "Москва, ул. Складочная, 12",
+      deliveryPoints: [
+        { address: "Москва, Пресненская наб., 10", latitude: 55.7473, longitude: 37.5398 },
+        { address: "Москва, Ленинградский проспект, 80", latitude: 55.805, longitude: 37.515 }
+      ],
+      desiredDeliveryDate: dateAt("2026-06-14", 10)
+    },
+    {
+      client: client3,
+      cargoName: "Воскресенье: сборная мебель",
+      weightKg: 1450,
+      volume: 9.7,
+      pickupAddress: "Химки, Вашутинское шоссе, 9",
+      deliveryPoints: [
+        { address: "Мытищи, ул. Мира, 15", latitude: 55.9105, longitude: 37.7363 },
+        { address: "Балашиха, проспект Ленина, 25", latitude: 55.7963, longitude: 37.9382 },
+        { address: "Москва, Пресненская наб., 10", latitude: 55.7473, longitude: 37.5398 }
+      ],
+      desiredDeliveryDate: dateAt("2026-06-14", 13)
+    }
+  ];
+
+  await Promise.all(
+    unplannedRequestFixtures.map((fixture) =>
+      prisma.cargoRequest.create({
+        data: {
+          clientId: fixture.client.id,
+          cargoName: fixture.cargoName,
+          weightKg: fixture.weightKg,
+          volume: fixture.volume,
+          pickupAddress: fixture.pickupAddress,
+          deliveryAddress: fixture.deliveryPoints[0].address,
+          desiredDeliveryDate: fixture.desiredDeliveryDate,
+          status: "NEW",
+          deliveryPoints: {
+            create: fixture.deliveryPoints.map((point, pointIndex) => ({
+              address: point.address,
+              latitude: point.latitude,
+              longitude: point.longitude,
+              orderNumber: pointIndex + 1
+            }))
+          }
+        }
+      })
+    )
+  );
+
   console.log("Seed data created");
 }
 
