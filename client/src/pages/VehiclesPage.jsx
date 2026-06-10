@@ -39,7 +39,13 @@ export default function VehiclesPage() {
         { field: "plateNumber", label: "Госномер" },
         { field: "capacityKg", label: "Грузоподъемность", render: (row) => `${row.capacityKg} кг` },
         { field: "fuelConsumptionPer100Km", label: "Расход", render: (row) => `${row.fuelConsumptionPer100Km} л/100 км` },
-        { field: "availabilityStatus", label: "Занятость", render: (row) => <AvailabilityMenu row={row} /> }
+        {
+          field: "availabilityStatus",
+          label: "Занятость",
+          align: "center",
+          sx: { minWidth: 220 },
+          render: (row) => <AvailabilityMenu row={row} />
+        }
       ]}
     />
   );

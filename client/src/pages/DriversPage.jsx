@@ -35,7 +35,13 @@ export default function DriversPage() {
         { field: "phone", label: "Телефон" },
         { field: "licenseNumber", label: "Права" },
         { field: "licenseCategory", label: "Категории" },
-        { field: "availabilityStatus", label: "Занятость", render: (row) => <AvailabilityMenu row={row} /> }
+        {
+          field: "availabilityStatus",
+          label: "Занятость",
+          align: "center",
+          sx: { minWidth: 220 },
+          render: (row) => <AvailabilityMenu row={row} />
+        }
       ]}
     />
   );

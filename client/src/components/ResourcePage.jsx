@@ -225,7 +225,9 @@ export default function ResourcePage({
           <TableHead>
             <TableRow>
               {columns.map((column) => (
-                <TableCell key={column.field}>{column.label}</TableCell>
+                <TableCell key={column.field} align={column.align} sx={column.sx}>
+                  {column.label}
+                </TableCell>
               ))}
               <TableCell align="right">Действия</TableCell>
             </TableRow>
@@ -234,7 +236,9 @@ export default function ResourcePage({
             {rows.map((row) => (
               <TableRow key={row.id} hover>
                 {columns.map((column) => (
-                  <TableCell key={column.field}>{column.render ? column.render(row) : row[column.field]}</TableCell>
+                  <TableCell key={column.field} align={column.align} sx={column.sx}>
+                    {column.render ? column.render(row) : row[column.field]}
+                  </TableCell>
                 ))}
                 <TableCell align="right">
                   {rowActions
