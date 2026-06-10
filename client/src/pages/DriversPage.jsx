@@ -1,5 +1,4 @@
 import AvailabilityMenu from "../components/AvailabilityMenu";
-import StatusChip from "../components/StatusChip";
 import ResourcePage from "../components/ResourcePage";
 import { todayInput } from "../utils/format";
 
@@ -15,7 +14,7 @@ export default function DriversPage() {
       title="Водители"
       endpoint="/drivers"
       searchPlaceholder="ФИО, телефон или права"
-      filter={{ queryKey: "status", label: "Статус записи", options: statusOptions }}
+      filter={{ queryKey: "status", label: "Состояние", options: statusOptions }}
       extraParams={{ availabilityDate: todayInput(), availabilityDays: 7 }}
       initialValues={{
         fullName: "",
@@ -36,8 +35,7 @@ export default function DriversPage() {
         { field: "phone", label: "Телефон" },
         { field: "licenseNumber", label: "Права" },
         { field: "licenseCategory", label: "Категории" },
-        { field: "availabilityStatus", label: "Занятость", render: (row) => <AvailabilityMenu row={row} /> },
-        { field: "status", label: "Статус записи", render: (row) => <StatusChip value={row.status} /> }
+        { field: "availabilityStatus", label: "Занятость", render: (row) => <AvailabilityMenu row={row} /> }
       ]}
     />
   );

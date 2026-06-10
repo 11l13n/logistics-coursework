@@ -25,11 +25,8 @@ function localDateKey(date) {
 function dayLabel(dateValue) {
   const date = new Date(`${dateValue}T00:00:00`);
   const today = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
   if (localDateKey(date) === localDateKey(today)) return "Сегодня";
-  if (localDateKey(date) === localDateKey(tomorrow)) return "Завтра";
 
   return date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
 }
