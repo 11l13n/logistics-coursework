@@ -79,6 +79,17 @@ const formatDuration = (distanceKm) => {
 
 const requestLabel = (request) => (request ? `#${request.id} · ${request.cargoName} · до ${formatDateTime(request.desiredDeliveryDate)}` : "");
 
+const formatPointCount = (count) => {
+  const normalized = Math.abs(Number(count));
+  const lastTwoDigits = normalized % 100;
+  const lastDigit = normalized % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return `${count} точек`;
+  if (lastDigit === 1) return `${count} точка`;
+  if (lastDigit >= 2 && lastDigit <= 4) return `${count} точки`;
+  return `${count} точек`;
+};
+
 export default function PlanningPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
@@ -344,7 +355,7 @@ export default function PlanningPage() {
                             Срок и точки
                           </Typography>
                           <Typography variant="body2" fontWeight={800}>
-                            {formatDateTime(selectedRequest.desiredDeliveryDate)} · {deliveryPoints.length} точек
+                            {formatDateTime(selectedRequest.desiredDeliveryDate)} · {formatPointCount(deliveryPoints.length)}
                           </Typography>
                         </Grid>
                       </Grid>
@@ -450,7 +461,7 @@ export default function PlanningPage() {
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary">
-                        Примерное время с учетом трафика
+                        Ориентировочное время в пути
                       </Typography>
                       <Typography variant="h5" fontWeight={900}>
                         {estimatedDuration}
