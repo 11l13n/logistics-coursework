@@ -23,7 +23,7 @@ async function main() {
   await prisma.driver.deleteMany();
   await prisma.user.deleteMany();
 
-  const [admin, dispatcher, driverUser, driverUser2] = await Promise.all([
+  const [admin, dispatcher, driverUser, driverUser2, driverUser3] = await Promise.all([
     prisma.user.create({
       data: {
         fullName: "Петров Алексей Сергеевич",
@@ -52,6 +52,14 @@ async function main() {
       data: {
         fullName: "Кузнецов Дмитрий Олегович",
         email: "driver2@example.com",
+        passwordHash: await hash("driver123"),
+        role: "DRIVER"
+      }
+    }),
+    prisma.user.create({
+      data: {
+        fullName: "Федоров Павел Николаевич",
+        email: "driver3@example.com",
         passwordHash: await hash("driver123"),
         role: "DRIVER"
       }
@@ -84,6 +92,7 @@ async function main() {
     }),
     prisma.driver.create({
       data: {
+        userId: driverUser3.id,
         fullName: "Федоров Павел Николаевич",
         phone: "+7 926 555-77-99",
         licenseNumber: "50CC778899",
