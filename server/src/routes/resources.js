@@ -14,7 +14,7 @@ function createCrudRouter({ model, searchFields = [], include, orderBy = { id: "
   router.get(
     "/",
     asyncHandler(async (req, res) => {
-      const { availabilityDate, search, status } = req.query;
+      const { availabilityDate, availabilityDays, search, status } = req.query;
       const where = {};
 
       if (status) {
@@ -28,7 +28,7 @@ function createCrudRouter({ model, searchFields = [], include, orderBy = { id: "
       }
 
       const data = await prisma[model].findMany({ where, include, orderBy });
-      const rows = await addAvailabilityForDate(prisma, model, data, availabilityDate);
+      const rows = await addAvailabilityForDate(prisma, model, data, availabilityDate, availabilityDays);
       res.json(rows);
     })
   );

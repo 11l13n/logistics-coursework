@@ -42,6 +42,7 @@ export default function ResourcePage({
   searchPlaceholder = "Поиск",
   filter,
   filters,
+  extraParams = {},
   transformBeforeSubmit,
   rowActions = []
 }) {
@@ -62,14 +63,14 @@ export default function ResourcePage({
   const [form, setForm] = useState(initialValues);
 
   const params = useMemo(() => {
-    const result = {};
+    const result = { ...extraParams };
     if (search) result.search = search;
     filterConfigs.forEach((filterConfig) => {
       const value = filterValues[filterConfig.queryKey];
       if (value) result[filterConfig.queryKey] = value;
     });
     return result;
-  }, [search, filterSignature, filterValues]);
+  }, [search, filterSignature, filterValues, extraParams]);
 
   const load = async () => {
     setLoading(true);

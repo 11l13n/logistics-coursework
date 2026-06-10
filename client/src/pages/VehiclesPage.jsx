@@ -1,3 +1,4 @@
+import AvailabilityMenu from "../components/AvailabilityMenu";
 import StatusChip from "../components/StatusChip";
 import ResourcePage from "../components/ResourcePage";
 import { todayInput } from "../utils/format";
@@ -15,10 +16,8 @@ export default function VehiclesPage() {
       title="Автомобили"
       endpoint="/vehicles"
       searchPlaceholder="Марка, модель или госномер"
-      filters={[
-        { queryKey: "availabilityDate", label: "Дата занятости", type: "date", defaultValue: todayInput(), minWidth: 170 },
-        { queryKey: "status", label: "Статус записи", options: statusOptions }
-      ]}
+      filter={{ queryKey: "status", label: "Статус записи", options: statusOptions }}
+      extraParams={{ availabilityDate: todayInput(), availabilityDays: 7 }}
       initialValues={{
         brand: "",
         model: "",
@@ -41,7 +40,7 @@ export default function VehiclesPage() {
         { field: "plateNumber", label: "Госномер" },
         { field: "capacityKg", label: "Грузоподъемность", render: (row) => `${row.capacityKg} кг` },
         { field: "fuelConsumptionPer100Km", label: "Расход", render: (row) => `${row.fuelConsumptionPer100Km} л/100 км` },
-        { field: "availabilityStatus", label: "На дату", render: (row) => <StatusChip value={row.availabilityStatus || row.status} /> },
+        { field: "availabilityStatus", label: "Занятость", render: (row) => <AvailabilityMenu row={row} /> },
         { field: "status", label: "Статус записи", render: (row) => <StatusChip value={row.status} /> }
       ]}
     />
