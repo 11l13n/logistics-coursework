@@ -1,5 +1,6 @@
 import StatusChip from "../components/StatusChip";
 import ResourcePage from "../components/ResourcePage";
+import { todayInput } from "../utils/format";
 
 const statusOptions = [
   { value: "AVAILABLE", label: "Свободен" },
@@ -13,7 +14,10 @@ export default function DriversPage() {
       title="Водители"
       endpoint="/drivers"
       searchPlaceholder="ФИО, телефон или права"
-      filter={{ queryKey: "status", label: "Статус", options: statusOptions }}
+      filters={[
+        { queryKey: "availabilityDate", label: "Дата занятости", type: "date", defaultValue: todayInput(), minWidth: 170 },
+        { queryKey: "status", label: "Статус записи", options: statusOptions }
+      ]}
       initialValues={{
         fullName: "",
         phone: "",
@@ -33,7 +37,8 @@ export default function DriversPage() {
         { field: "phone", label: "Телефон" },
         { field: "licenseNumber", label: "Права" },
         { field: "licenseCategory", label: "Категории" },
-        { field: "status", label: "Статус", render: (row) => <StatusChip value={row.status} /> }
+        { field: "availabilityStatus", label: "На дату", render: (row) => <StatusChip value={row.availabilityStatus || row.status} /> },
+        { field: "status", label: "Статус записи", render: (row) => <StatusChip value={row.status} /> }
       ]}
     />
   );

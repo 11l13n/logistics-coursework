@@ -621,8 +621,18 @@ test("создание маршрута назначает водителя, а�
   assert.equal(response.body.waybill.status, "CREATED");
   assert.equal(response.body.waybill.plannedFuel, 24);
   assert.equal(db.cargoRequests.find((item) => item.id === 1).status, "PLANNED");
-  assert.equal(db.drivers.find((item) => item.id === 2).status, "BUSY");
-  assert.equal(db.vehicles.find((item) => item.id === 2).status, "BUSY");
+  assert.equal(db.drivers.find((item) => item.id === 2).status, "AVAILABLE");
+  assert.equal(db.vehicles.find((item) => item.id === 2).status, "AVAILABLE");
+
+  const driversResponse = await request("GET", "/api/drivers?availabilityDate=2026-06-15", {
+    token: dispatcherToken
+  });
+  const vehiclesResponse = await request("GET", "/api/vehicles?availabilityDate=2026-06-15", {
+    token: dispatcherToken
+  });
+
+  assert.equal(driversResponse.body.find((item) => item.id === 2).availabilityStatus, "BUSY");
+  assert.equal(vehiclesResponse.body.find((item) => item.id === 2).availabilityStatus, "BUSY");
 });
 
 test("водитель сохраняет фактический пробег и расход топлива в путевом листе", async () => {
@@ -642,6 +652,9 @@ test("водитель сохраняет фактический пробег и
   assert.equal(response.body.endMileage, 2182);
   assert.equal(response.body.actualFuel, 21.7);
   assert.equal(db.routes.find((route) => route.id === 1).status, "IN_PROGRESS");
+  assert.equal(db.cargoRequests.find((requestItem) => requestItem.id === 2).status, "IN_PROGRESS");
+  assert.equal(db.drivers.find((driver) => driver.id === 1).status, "BUSY");
+  assert.equal(db.vehicles.find((vehicle) => vehicle.id === 1).status, "BUSY");
 });
 
 test("начало рейса меняет статус маршрута и путевого листа", async () => {
@@ -654,10 +667,13 @@ test("начало рейса меняет статус маршрута и пу
   assert.equal(response.status, 200);
   assert.equal(response.body.status, "IN_PROGRESS");
   assert.equal(response.body.waybill.status, "ACTIVE");
+  assert.equal(db.drivers.find((driver) => driver.id === 1).status, "BUSY");
+  assert.equal(db.vehicles.find((vehicle) => vehicle.id === 1).status, "BUSY");
 });
 
 test("рейс в работе можно вернуть в план", async () => {
   const driverToken = await tokenFor("driver@example.com", "driver123");
+  const dispatcherToken = await tokenFor("dispatcher@example.com", "dispatcher123");
   await request("PUT", "/api/routes/1", {
     token: driverToken,
     body: { status: "IN_PROGRESS" }
@@ -672,6 +688,14 @@ test("рейс в работе можно вернуть в план", async () 
   assert.equal(response.body.status, "PLANNED");
   assert.equal(response.body.waybill.status, "CREATED");
   assert.equal(db.cargoRequests.find((requestItem) => requestItem.id === response.body.cargoRequestId).status, "PLANNED");
+  assert.equal(db.drivers.find((driver) => driver.id === response.body.driverId).status, "AVAILABLE");
+  assert.equal(db.vehicles.find((vehicle) => vehicle.id === response.body.vehicleId).status, "AVAILABLE");
+
+  const driversResponse = await request("GET", "/api/drivers?availabilityDate=2026-06-15", {
+    token: dispatcherToken
+  });
+  assert.equal(driversResponse.status, 200);
+  assert.equal(driversResponse.body.find((driver) => driver.id === response.body.driverId).availabilityStatus, "BUSY");
 });
 
 test("завершение рейса освобождает водителя и автомобиль", async () => {

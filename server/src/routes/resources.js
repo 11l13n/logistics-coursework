@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma");
 const auth = require("../middleware/auth");
 const requireRoles = require("../middleware/roles");
 const asyncHandler = require("../utils/asyncHandler");
+const { addAvailabilityForDate } = require("../utils/resourceAvailability");
 
 const readOnlyFields = new Set(["id", "createdAt", "updatedAt"]);
 
@@ -13,7 +14,7 @@ function createCrudRouter({ model, searchFields = [], include, orderBy = { id: "
   router.get(
     "/",
     asyncHandler(async (req, res) => {
-      const { search, status } = req.query;
+      const { availabilityDate, search, status } = req.query;
       const where = {};
 
       if (status) {
@@ -27,7 +28,8 @@ function createCrudRouter({ model, searchFields = [], include, orderBy = { id: "
       }
 
       const data = await prisma[model].findMany({ where, include, orderBy });
-      res.json(data);
+      const rows = await addAvailabilityForDate(prisma, model, data, availabilityDate);
+      res.json(rows);
     })
   );
 

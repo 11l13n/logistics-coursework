@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma");
 const auth = require("../middleware/auth");
 const requireRoles = require("../middleware/roles");
 const asyncHandler = require("../utils/asyncHandler");
+const { syncResourceRuntimeStatuses } = require("../utils/resourceAvailability");
 const { normalizePayload } = require("./resources");
 
 const router = express.Router();
@@ -162,16 +163,20 @@ router.put(
 
       if (data.status === "ACTIVE") {
         await tx.route.update({ where: { id: existing.routeId }, data: { status: "IN_PROGRESS" } });
+        await tx.cargoRequest.update({
+          where: { id: existing.route.cargoRequestId },
+          data: { status: "IN_PROGRESS" }
+        });
+        await syncResourceRuntimeStatuses(tx, existing.route);
       }
 
       if (data.status === "COMPLETED") {
         await tx.route.update({ where: { id: existing.routeId }, data: { status: "COMPLETED" } });
-        await tx.driver.update({ where: { id: existing.route.driverId }, data: { status: "AVAILABLE" } });
-        await tx.vehicle.update({ where: { id: existing.route.vehicleId }, data: { status: "AVAILABLE" } });
         await tx.cargoRequest.update({
           where: { id: existing.route.cargoRequestId },
           data: { status: "COMPLETED" }
         });
+        await syncResourceRuntimeStatuses(tx, existing.route);
       }
 
       return waybill;

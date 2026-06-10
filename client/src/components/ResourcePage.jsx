@@ -51,7 +51,12 @@ export default function ResourcePage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState({});
+  const [filterValues, setFilterValues] = useState(() =>
+    filterConfigs.reduce((values, filterConfig) => {
+      if (filterConfig.defaultValue) values[filterConfig.queryKey] = filterConfig.defaultValue;
+      return values;
+    }, {})
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
   const [form, setForm] = useState(initialValues);
@@ -162,23 +167,38 @@ export default function ResourcePage({
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
           {filterConfigs.map((filterConfig) => (
-            <FormControl size="small" sx={{ minWidth: filterConfig.minWidth || 180 }} key={filterConfig.queryKey}>
-              <InputLabel>{filterConfig.label}</InputLabel>
-              <Select
+            filterConfig.type === "date" ? (
+              <TextField
+                key={filterConfig.queryKey}
                 label={filterConfig.label}
+                type="date"
+                size="small"
                 value={filterValues[filterConfig.queryKey] || ""}
                 onChange={(event) =>
                   setFilterValues((prev) => ({ ...prev, [filterConfig.queryKey]: event.target.value }))
                 }
-              >
-                <MenuItem value="">{filterConfig.emptyLabel || "Все"}</MenuItem>
-                {filterConfig.options.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                sx={{ minWidth: filterConfig.minWidth || 180 }}
+                InputLabelProps={{ shrink: true }}
+              />
+            ) : (
+              <FormControl size="small" sx={{ minWidth: filterConfig.minWidth || 180 }} key={filterConfig.queryKey}>
+                <InputLabel>{filterConfig.label}</InputLabel>
+                <Select
+                  label={filterConfig.label}
+                  value={filterValues[filterConfig.queryKey] || ""}
+                  onChange={(event) =>
+                    setFilterValues((prev) => ({ ...prev, [filterConfig.queryKey]: event.target.value }))
+                  }
+                >
+                  <MenuItem value="">{filterConfig.emptyLabel || "Все"}</MenuItem>
+                  {filterConfig.options.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )
           ))}
           <TextField
             value={search}

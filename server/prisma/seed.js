@@ -97,7 +97,7 @@ async function main() {
         phone: "+7 926 555-77-99",
         licenseNumber: "50CC778899",
         licenseCategory: "C, E",
-        status: "BUSY"
+        status: "AVAILABLE"
       }
     })
   ]);
@@ -130,7 +130,7 @@ async function main() {
         plateNumber: "М777ОР777",
         capacityKg: 6500,
         fuelConsumptionPer100Km: 18.6,
-        status: "BUSY"
+        status: "AVAILABLE"
       }
     }),
     prisma.vehicle.create({

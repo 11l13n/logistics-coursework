@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const requireRoles = require("../middleware/roles");
 const asyncHandler = require("../utils/asyncHandler");
 const { getDayRange } = require("../utils/dates");
+const { plannedBusyStatuses, syncResourceRuntimeStatuses } = require("../utils/resourceAvailability");
 const { normalizePayload } = require("./resources");
 
 const router = express.Router();
@@ -37,22 +38,13 @@ const applyArchiveFilter = (where, archiveMode) => {
   }
 };
 
-const activeRouteStatuses = ["PLANNED", "IN_PROGRESS"];
+const activeRouteStatuses = plannedBusyStatuses;
 
 const updateLinkedStatuses = async (tx, route, status) => {
   const completed = status === "COMPLETED";
   const cancelled = status === "CANCELLED";
-  const active = status === "IN_PROGRESS" || status === "PLANNED";
 
-  if (completed || cancelled) {
-    await tx.driver.update({ where: { id: route.driverId }, data: { status: "AVAILABLE" } });
-    await tx.vehicle.update({ where: { id: route.vehicleId }, data: { status: "AVAILABLE" } });
-  }
-
-  if (active) {
-    await tx.driver.update({ where: { id: route.driverId }, data: { status: "BUSY" } });
-    await tx.vehicle.update({ where: { id: route.vehicleId }, data: { status: "BUSY" } });
-  }
+  await syncResourceRuntimeStatuses(tx, route);
 
   if (completed) {
     await tx.cargoRequest.update({
@@ -216,8 +208,6 @@ router.post(
         where: { id: payload.cargoRequestId },
         data: { status: "PLANNED" }
       });
-      await tx.driver.update({ where: { id: payload.driverId }, data: { status: "BUSY" } });
-      await tx.vehicle.update({ where: { id: payload.vehicleId }, data: { status: "BUSY" } });
 
       return tx.route.findUnique({ where: { id: route.id }, include: routeInclude });
     });
@@ -345,8 +335,7 @@ router.delete(
 
     await prisma.$transaction(async (tx) => {
       await tx.route.delete({ where: { id: route.id } });
-      await tx.driver.update({ where: { id: route.driverId }, data: { status: "AVAILABLE" } });
-      await tx.vehicle.update({ where: { id: route.vehicleId }, data: { status: "AVAILABLE" } });
+      await syncResourceRuntimeStatuses(tx, route);
     });
 
     res.status(204).send();
