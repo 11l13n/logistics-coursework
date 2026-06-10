@@ -117,14 +117,7 @@ const resetRequestRoutes = async (tx, cargoRequestId) => {
   if (!routes.length) return;
 
   const routeIds = routes.map((route) => route.id);
-  await tx.route.updateMany({
-    where: { id: { in: routeIds } },
-    data: { status: "CANCELLED" }
-  });
-  await tx.waybill.updateMany({
-    where: { routeId: { in: routeIds } },
-    data: { status: "CANCELLED" }
-  });
+  await tx.route.deleteMany({ where: { id: { in: routeIds } } });
   await releaseResourcesIfFree(tx, routes);
 };
 

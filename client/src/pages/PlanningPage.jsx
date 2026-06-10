@@ -90,11 +90,14 @@ const formatPointCount = (count) => {
   return `${count} точек`;
 };
 
+const activeRouteStatuses = new Set(["PLANNED", "IN_PROGRESS"]);
+
 export default function PlanningPage() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [dayRoutes, setDayRoutes] = useState([]);
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [plannedDate, setPlannedDate] = useState(dateTimeTomorrow());
   const [driverId, setDriverId] = useState("");
@@ -119,6 +122,18 @@ export default function PlanningPage() {
       })
       .catch((requestError) => setError(getErrorMessage(requestError)));
   }, []);
+
+  useEffect(() => {
+    if (!plannedDate) {
+      setDayRoutes([]);
+      return;
+    }
+
+    http
+      .get("/routes", { params: { date: plannedDate.slice(0, 10) } })
+      .then(({ data }) => setDayRoutes(data))
+      .catch((requestError) => setError(getErrorMessage(requestError)));
+  }, [plannedDate]);
 
   const selectedRequest = requests.find((request) => request.id === Number(selectedRequestId));
 
@@ -189,6 +204,36 @@ export default function PlanningPage() {
 
   const distanceKm = Number(calculateDistance(points).toFixed(1));
   const estimatedDuration = formatDuration(distanceKm);
+  const busyDriverIds = useMemo(
+    () => new Set(dayRoutes.filter((route) => activeRouteStatuses.has(route.status)).map((route) => route.driverId)),
+    [dayRoutes]
+  );
+  const busyVehicleIds = useMemo(
+    () => new Set(dayRoutes.filter((route) => activeRouteStatuses.has(route.status)).map((route) => route.vehicleId)),
+    [dayRoutes]
+  );
+
+  const getDriverAvailability = (driver) => {
+    if (driver.status === "INACTIVE") return { label: "Неактивен", disabled: true };
+    if (busyDriverIds.has(driver.id)) return { label: "Занят на дату", disabled: true };
+    return { label: "Свободен на дату", disabled: false };
+  };
+
+  const getVehicleAvailability = (vehicle) => {
+    if (["REPAIR", "INACTIVE"].includes(vehicle.status)) return { label: vehicle.status === "REPAIR" ? "Ремонт" : "Неактивен", disabled: true };
+    if (busyVehicleIds.has(vehicle.id)) return { label: "Занят на дату", disabled: true };
+    return { label: "Свободен на дату", disabled: false };
+  };
+  const selectedDriver = drivers.find((driver) => driver.id === Number(driverId));
+  const selectedVehicle = vehicles.find((vehicle) => vehicle.id === Number(vehicleId));
+  const canCreateRoute =
+    selectedRequestId &&
+    driverId &&
+    vehicleId &&
+    selectedDriver &&
+    selectedVehicle &&
+    !getDriverAvailability(selectedDriver).disabled &&
+    !getVehicleAvailability(selectedVehicle).disabled;
 
   const updateDeliveryPoint = (index, patch) => {
     setDeliveryPoints((prev) => prev.map((point, itemIndex) => (itemIndex === index ? { ...point, ...patch } : point)));
@@ -476,11 +521,14 @@ export default function PlanningPage() {
                       <FormControl fullWidth size="small">
                         <InputLabel>Водитель</InputLabel>
                         <Select label="Водитель" value={driverId} onChange={(event) => setDriverId(event.target.value)}>
-                          {drivers.map((driver) => (
-                            <MenuItem key={driver.id} value={driver.id}>
-                              {driver.fullName} · {driver.status}
-                            </MenuItem>
-                          ))}
+                          {drivers.map((driver) => {
+                            const availability = getDriverAvailability(driver);
+                            return (
+                              <MenuItem key={driver.id} value={driver.id} disabled={availability.disabled}>
+                                {driver.fullName} · {availability.label}
+                              </MenuItem>
+                            );
+                          })}
                         </Select>
                       </FormControl>
                     </Grid>
@@ -488,11 +536,14 @@ export default function PlanningPage() {
                       <FormControl fullWidth size="small">
                         <InputLabel>Автомобиль</InputLabel>
                         <Select label="Автомобиль" value={vehicleId} onChange={(event) => setVehicleId(event.target.value)}>
-                          {vehicles.map((vehicle) => (
-                            <MenuItem key={vehicle.id} value={vehicle.id}>
-                              {vehicle.brand} {vehicle.model} · {vehicle.plateNumber}
-                            </MenuItem>
-                          ))}
+                          {vehicles.map((vehicle) => {
+                            const availability = getVehicleAvailability(vehicle);
+                            return (
+                              <MenuItem key={vehicle.id} value={vehicle.id} disabled={availability.disabled}>
+                                {vehicle.brand} {vehicle.model} · {vehicle.plateNumber} · {availability.label}
+                              </MenuItem>
+                            );
+                          })}
                         </Select>
                       </FormControl>
                     </Grid>
@@ -504,7 +555,7 @@ export default function PlanningPage() {
                         <Button
                           variant="contained"
                           startIcon={<SaveIcon />}
-                          disabled={!selectedRequestId || !driverId || !vehicleId}
+                          disabled={!canCreateRoute}
                           onClick={createRoute}
                         >
                           Создать маршрут

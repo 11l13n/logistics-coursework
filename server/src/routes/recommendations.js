@@ -52,14 +52,14 @@ router.post(
 
     const vehicles = await prisma.vehicle.findMany({
       where: {
-        status: "AVAILABLE",
+        status: { notIn: ["REPAIR", "INACTIVE"] },
         capacityKg: { gte: cargoRequest.weightKg }
       },
       orderBy: [{ capacityKg: "asc" }, { fuelConsumptionPer100Km: "asc" }]
     });
 
     const drivers = await prisma.driver.findMany({
-      where: { status: "AVAILABLE" },
+      where: { status: { not: "INACTIVE" } },
       orderBy: { fullName: "asc" }
     });
 

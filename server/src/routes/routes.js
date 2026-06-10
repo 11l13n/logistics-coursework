@@ -37,6 +37,8 @@ const applyArchiveFilter = (where, archiveMode) => {
   }
 };
 
+const activeRouteStatuses = ["PLANNED", "IN_PROGRESS"];
+
 const updateLinkedStatuses = async (tx, route, status) => {
   const completed = status === "COMPLETED";
   const cancelled = status === "CANCELLED";
@@ -60,6 +62,17 @@ const updateLinkedStatuses = async (tx, route, status) => {
     await tx.waybill.updateMany({
       where: { routeId: route.id },
       data: { status: "COMPLETED", returnTime: new Date() }
+    });
+  }
+
+  if (status === "PLANNED") {
+    await tx.cargoRequest.update({
+      where: { id: route.cargoRequestId },
+      data: { status: "PLANNED" }
+    });
+    await tx.waybill.updateMany({
+      where: { routeId: route.id },
+      data: { status: "CREATED", departureTime: null, returnTime: null }
     });
   }
 
@@ -138,6 +151,29 @@ router.post(
     const vehicle = await prisma.vehicle.findUnique({ where: { id: payload.vehicleId } });
     if (!vehicle) {
       return res.status(404).json({ message: "Автомобиль не найден" });
+    }
+    if (["REPAIR", "INACTIVE"].includes(vehicle.status)) {
+      return res.status(409).json({ message: "Автомобиль недоступен для назначения" });
+    }
+
+    const driver = await prisma.driver.findUnique({ where: { id: payload.driverId } });
+    if (!driver) {
+      return res.status(404).json({ message: "Водитель не найден" });
+    }
+    if (driver.status === "INACTIVE") {
+      return res.status(409).json({ message: "Водитель недоступен для назначения" });
+    }
+
+    const { start, end } = getDayRange(payload.plannedDate || cargoRequest.desiredDeliveryDate);
+    const busyRoute = await prisma.route.findFirst({
+      where: {
+        plannedDate: { gte: start, lte: end },
+        status: { in: activeRouteStatuses },
+        OR: [{ driverId: payload.driverId }, { vehicleId: payload.vehicleId }]
+      }
+    });
+    if (busyRoute) {
+      return res.status(409).json({ message: "Водитель или автомобиль уже заняты на выбранную дату" });
     }
 
     const plannedFuel = Number(((payload.distanceKm * vehicle.fuelConsumptionPer100Km) / 100).toFixed(2));
@@ -267,9 +303,12 @@ router.put(
     }
 
     if (req.user.role === "DRIVER") {
-      const allowedStatus = ["IN_PROGRESS", "COMPLETED"].includes(req.body.status);
+      const allowedStatus = ["PLANNED", "IN_PROGRESS", "COMPLETED"].includes(req.body.status);
       if (!allowedStatus) {
         return res.status(403).json({ message: "Водитель может менять только статус рейса" });
+      }
+      if (req.body.status === "PLANNED" && current.status !== "IN_PROGRESS") {
+        return res.status(409).json({ message: "Вернуть в план можно только рейс в работе" });
       }
     } else if (!["ADMIN", "DISPATCHER"].includes(req.user.role)) {
       return res.status(403).json({ message: "Недостаточно прав" });

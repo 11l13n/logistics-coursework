@@ -31,6 +31,7 @@ import DoneIcon from "@mui/icons-material/Done";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import UnarchiveIcon from "@mui/icons-material/Unarchive";
+import UndoIcon from "@mui/icons-material/Undo";
 import http, { getErrorMessage } from "../api/http";
 import { useAuth } from "../auth/AuthContext";
 import RouteMap from "../components/RouteMap";
@@ -223,11 +224,18 @@ export default function RoutesPage() {
                     </Tooltip>
                   )}
                   {route.status === "IN_PROGRESS" && (
-                    <Tooltip title="Завершить">
-                      <IconButton color="success" onClick={() => updateStatus(route, "COMPLETED")}>
-                        <DoneIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <>
+                      <Tooltip title="Вернуть в план">
+                        <IconButton color="warning" onClick={() => updateStatus(route, "PLANNED")}>
+                          <UndoIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Завершить">
+                        <IconButton color="success" onClick={() => updateStatus(route, "COMPLETED")}>
+                          <DoneIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </>
                   )}
                   {user.role !== "DRIVER" && route.status !== "COMPLETED" && route.status !== "CANCELLED" && (
                     <Tooltip title="Отменить">
