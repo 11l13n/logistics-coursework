@@ -168,10 +168,10 @@ export default function DashboardPage() {
           <StatCard title="Выполнено" value={stats.completed} icon={<TaskAltIcon />} accent="success.main" />
         </Grid>
         <Grid item xs={12} sm={6} lg={2.4}>
-          <StatCard title="Пробег выполненных, км" value={stats.mileage} icon={<SpeedIcon />} accent="secondary.main" />
+          <StatCard title="Пробег, км" value={stats.mileage} icon={<SpeedIcon />} accent="secondary.main" />
         </Grid>
         <Grid item xs={12} sm={6} lg={2.4}>
-          <StatCard title="Топливо выполненных, л" value={stats.fuel} icon={<LocalGasStationIcon />} accent="error.main" />
+          <StatCard title="Топливо, л" value={stats.fuel} icon={<LocalGasStationIcon />} accent="error.main" />
         </Grid>
       </Grid>
 
