@@ -245,11 +245,20 @@ export default function RoutesPage() {
                     </Tooltip>
                   )}
                   {route.status === "COMPLETED" && !route.archivedAt && (
-                    <Tooltip title="В архив">
-                      <IconButton onClick={() => archiveRoute(route)}>
-                        <ArchiveIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <>
+                      {user.role !== "DRIVER" && (
+                        <Tooltip title="Вернуть в план">
+                          <IconButton color="warning" onClick={() => updateStatus(route, "PLANNED")}>
+                            <UndoIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="В архив">
+                        <IconButton onClick={() => archiveRoute(route)}>
+                          <ArchiveIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </>
                   )}
                   {route.archivedAt && (
                     <Tooltip title="Вернуть из архива">
