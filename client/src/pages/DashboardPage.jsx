@@ -31,6 +31,13 @@ const periodOptions = [
   { value: "month", label: "Месяц" },
   { value: "all", label: "Все" }
 ];
+const dashboardPeriodStorageKey = "logistics_dashboard_period";
+const periodValues = new Set(periodOptions.map((option) => option.value));
+
+const getSavedPeriod = () => {
+  const savedPeriod = localStorage.getItem(dashboardPeriodStorageKey);
+  return periodValues.has(savedPeriod) ? savedPeriod : "all";
+};
 
 const startOfDay = (date) => {
   const result = new Date(date);
@@ -79,7 +86,7 @@ const isInPeriod = (value, range) => {
 export default function DashboardPage() {
   const [routes, setRoutes] = useState([]);
   const [waybills, setWaybills] = useState([]);
-  const [period, setPeriod] = useState("all");
+  const [period, setPeriod] = useState(getSavedPeriod);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -90,6 +97,10 @@ export default function DashboardPage() {
       })
       .catch((requestError) => setError(getErrorMessage(requestError)));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(dashboardPeriodStorageKey, period);
+  }, [period]);
 
   const stats = useMemo(() => {
     const range = getPeriodRange(period);
