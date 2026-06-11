@@ -43,6 +43,7 @@ export default function ResourcePage({
   filter,
   filters,
   extraParams = {},
+  actionsAlign = "right",
   transformBeforeSubmit,
   rowActions = []
 }) {
@@ -229,7 +230,7 @@ export default function ResourcePage({
                   {column.label}
                 </TableCell>
               ))}
-              <TableCell align="right">Действия</TableCell>
+              <TableCell align={actionsAlign}>Действия</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -240,7 +241,7 @@ export default function ResourcePage({
                     {column.render ? column.render(row) : row[column.field]}
                   </TableCell>
                 ))}
-                <TableCell align="right">
+                <TableCell align={actionsAlign}>
                   {rowActions
                     .filter((action) => !action.isVisible || action.isVisible(row))
                     .map((action) => (

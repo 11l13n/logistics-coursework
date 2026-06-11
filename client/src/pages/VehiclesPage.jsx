@@ -17,6 +17,7 @@ export default function VehiclesPage() {
       searchPlaceholder="Марка, модель или госномер"
       filter={{ queryKey: "status", label: "Состояние", options: statusOptions }}
       extraParams={{ availabilityDate: todayInput(), availabilityDays: 7 }}
+      actionsAlign="center"
       initialValues={{
         brand: "",
         model: "",
@@ -34,11 +35,11 @@ export default function VehiclesPage() {
         { name: "status", label: "Статус", type: "select", options: statusOptions, required: true }
       ]}
       columns={[
-        { field: "brand", label: "Марка" },
-        { field: "model", label: "Модель" },
-        { field: "plateNumber", label: "Госномер" },
-        { field: "capacityKg", label: "Грузоподъемность", render: (row) => `${row.capacityKg} кг` },
-        { field: "fuelConsumptionPer100Km", label: "Расход", render: (row) => `${row.fuelConsumptionPer100Km} л/100 км` },
+        { field: "brand", label: "Марка", align: "center" },
+        { field: "model", label: "Модель", align: "center" },
+        { field: "plateNumber", label: "Госномер", align: "center" },
+        { field: "capacityKg", label: "Грузоподъемность", align: "center", render: (row) => `${row.capacityKg} кг` },
+        { field: "fuelConsumptionPer100Km", label: "Расход", align: "center", render: (row) => `${row.fuelConsumptionPer100Km} л/100 км` },
         {
           field: "availabilityStatus",
           label: "Занятость",

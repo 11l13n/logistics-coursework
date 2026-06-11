@@ -16,6 +16,7 @@ export default function DriversPage() {
       searchPlaceholder="ФИО, телефон или права"
       filter={{ queryKey: "status", label: "Состояние", options: statusOptions }}
       extraParams={{ availabilityDate: todayInput(), availabilityDays: 7 }}
+      actionsAlign="center"
       initialValues={{
         fullName: "",
         phone: "",
@@ -31,10 +32,10 @@ export default function DriversPage() {
         { name: "status", label: "Статус", type: "select", options: statusOptions, required: true }
       ]}
       columns={[
-        { field: "fullName", label: "ФИО" },
-        { field: "phone", label: "Телефон" },
-        { field: "licenseNumber", label: "Права" },
-        { field: "licenseCategory", label: "Категории" },
+        { field: "fullName", label: "ФИО", align: "center" },
+        { field: "phone", label: "Телефон", align: "center" },
+        { field: "licenseNumber", label: "Права", align: "center" },
+        { field: "licenseCategory", label: "Категории", align: "center" },
         {
           field: "availabilityStatus",
           label: "Занятость",
